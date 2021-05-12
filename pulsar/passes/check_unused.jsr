@@ -4,7 +4,7 @@ import pulsar.builtins as builtins
 import pulsar.passes.pass_visitor for PassVisitor
 import pulsar.symtable for SymbolTable
 
-// Variables which name ends in this string are ignored by the usage checker
+// Variables whose name ends with this string are ignored by the usage checker
 static var IGNORE_SUFFIX = "_"
 
 class UnusedChecker is PassVisitor

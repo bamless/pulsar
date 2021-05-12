@@ -1,0 +1,636 @@
+class Node 
+    // Accepts a `visitor`
+    // Should call the appropriate method on `visitor` to visit this node
+    fun accept(visitor_)
+        raise NotImplementedException()
+    end
+
+    // Returns the "represantative token" of this node
+    // Usually it's the first token of this node, or the representative token of the first node
+    // contained in this one, if it only contains other nodes
+    fun representativeToken()
+        raise NotImplementedException()
+    end
+end
+
+class Stmt is Node end
+class Expr is Node end
+
+class AstModule is Node
+    fun new(statements)
+        this.statements = statements
+    end
+
+    fun accept(visitor)
+        return visitor.visitModule(this)
+    end
+
+    fun representativeToken()
+        return this.statements[0].representativeToken() if #this.statements > 0 else null
+    end
+end
+
+static class Decl is Stmt
+    fun new()
+        this._static = false
+    end
+
+    fun isStatic()
+        return this._static
+    end
+
+    fun setStatic()
+        this._static = true
+    end
+end
+
+class FuncDecl is Decl
+    fun new(funTok, name, leftBracket, arguments, defaults, vararg, rightBracket, body)
+        super()
+        this.funTok = funTok
+        this.name = name
+        this.leftBracket = leftBracket
+        this.arguments = arguments
+        this.defaults = defaults
+        this.vararg = vararg
+        this.rightBracket = rightBracket
+        this.body = body
+    end
+
+    fun accept(visitor)
+        return visitor.visitFunc(this)
+    end
+
+    fun representativeToken()
+        return this.funTok
+    end
+end
+
+class NativeDecl is Decl
+    fun new(nativeTok, name, leftBracket, arguments, defaults, vararg, rightBracket)
+        super()
+        this.nativeTok = nativeTok
+        this.name = name
+        this.leftBracket = leftBracket
+        this.arguments = arguments
+        this.defaults = defaults
+        this.vararg = vararg
+        this.rightBracket = rightBracket
+    end
+
+    fun accept(visitor)
+        return visitor.visitNative(this)
+    end
+
+    fun representativeToken()
+        return this.nativeTok
+    end
+end
+
+class ClassDecl is Decl
+    fun new(classTok, name, superClass, methods)
+        super()
+        this.classTok = classTok
+        this.name = name
+        this.superClass = superClass
+        this.methods = methods
+    end
+
+    fun accept(visitor)
+        return visitor.visitClass(this)
+    end
+
+    fun representativeToken()
+        return this.classTok
+    end
+end
+
+class VarDecl is Decl
+    fun new(varTok, names, equal, init, unpack)
+        super()
+        this.varTok = varTok
+        this.names = names
+        this.equal = equal
+        this.init = init
+        this.unpack = unpack
+    end
+
+    fun accept(visitor)
+        return visitor.visitVar(this)
+    end
+
+    fun representativeToken()
+        return this.varTok
+    end
+end
+
+class BlockStmt is Stmt
+    fun new(statements)
+        this.statements = statements
+    end
+
+    fun accept(visitor)
+        return visitor.visitBlock(this)
+    end
+
+    fun representativeToken()
+        return this.statements[0] if #this.statements > 0 else null
+    end
+end
+
+class IfStmt is Stmt
+    fun new(ifTok, cond,Body, elseBody)
+        this.ifTok = ifTok
+        this.cond = cond
+        this.thenBody =Body
+        this.elseBody = elseBody
+    end
+
+    fun accept(visitor)
+        return visitor.visitIf(this)
+    end
+
+    fun representativeToken()
+        return this.ifTok
+    end
+end
+
+class ForStmt is Stmt
+    fun new(forTok, init, cond, action, body)
+        this.forTok = forTok
+        this.init = init
+        this.cond = cond
+        this.action = action
+        this.body = body
+    end
+
+    fun accept(visitor)
+        return visitor.visitFor(this)
+    end
+
+    fun representativeToken()
+        return this.forTok
+    end
+end
+
+class ForEachStmt is Stmt
+    fun new(forTok, variable, inTok, iter, body)
+        this.forTok = forTok
+        this.variable, this.iter = variable, iter
+        this.inTok = inTok
+        this.body = body
+    end
+
+    fun accept(visitor)
+        return visitor.visitForEach(this)
+    end
+
+    fun representativeToken()
+        return this.forTok
+    end
+end
+
+class WhileStmt is Stmt
+    fun new(whileTok, cond, body)
+        this.whileTok = whileTok
+        this.cond = cond
+        this.body = body
+    end
+
+    fun accept(visitor)
+        return visitor.visitWhile(this)
+    end
+
+    fun representativeToken()
+        return this.whileTok
+    end
+end
+
+class ReturnStmt is Stmt
+    fun new(returnTok, expr)
+        this.returnTok = returnTok
+        this.expr = expr
+    end
+
+    fun accept(visitor)
+        return visitor.visitReturn(this)
+    end
+
+    fun representativeToken()
+        return this.returnTok
+    end
+end
+
+class ImportStmt is Stmt
+    fun new(importTok, modules, asName, names)
+        this.importTok = importTok
+        this.modules = modules
+        this.asName = asName
+        this.names = names
+    end
+
+    fun accept(visitor)
+        return visitor.visitImport(this)
+    end
+
+    fun representativeToken()
+        return this.importTok
+    end
+end
+
+class TryStmt is Stmt
+    fun new(tokTry, tryBlock, excepts, ensureBlock)
+        this.tokTry = tokTry
+        this.tryBlock = tryBlock
+        this.excepts = excepts
+        this.ensureBlock = ensureBlock
+    end
+
+    fun accept(visitor)
+        return visitor.visitTry(this)
+    end
+
+    fun representativeToken()
+        return this.tokTry
+    end
+end
+
+class ExceptStmt is Stmt
+    fun new(exceptTok, expression, name, body)
+        this.exceptTok = exceptTok
+        this.expression = expression
+        this.name = name
+        this.body = body
+    end
+
+    fun accept(visitor)
+        return visitor.visitExcept(this)
+    end
+
+    fun representativeToken()
+        return this.exceptTok
+    end
+end
+
+class RaiseStmt is Stmt
+    fun new(raiseTok, expression)
+        this.raiseTok = raiseTok
+        this.expression = expression
+    end
+
+    fun accept(visitor)
+        return visitor.visitRaise(this)
+    end
+
+    fun representativeToken()
+        return this.raiseTok
+    end
+end
+
+class WithStmt is Stmt
+    fun new(withTok, expression, name, body)
+        this.withTok = withTok
+        this.expression = expression
+        this.name = name
+        this.body = body
+    end
+
+    fun accept(visitor)
+        return visitor.visitWith(this)
+    end
+
+    fun representativeToken()
+        return this.withTok
+    end
+end
+
+class BreakStmt is Stmt
+    fun new(token)
+        this.token = token
+    end
+
+    fun accept(visitor)
+        return visitor.visitBreak(this)
+    end
+
+    fun representativeToken()
+        return this.token
+    end
+end
+
+class ContinueStmt is Stmt
+    fun new(token)
+        this.token = token
+    end
+
+    fun accept(visitor)
+        return visitor.visitContinue(this)
+    end
+
+    fun representativeToken()
+        return this.token
+    end
+end
+
+class AssignmentExpr is Expr
+    fun new(l, equal, r)
+        this.l, this.equal, this.r = l, equal, r
+    end
+
+    fun accept(visitor)
+        return visitor.visitAssignment(this)
+    end
+
+    fun representativeToken()
+        return this.l.representativeToken()
+    end
+end
+
+class CompoundAssExpr is Expr
+    fun new(l, op, r)
+        this.l, this.op, this.r = l, op, r
+    end
+
+    fun accept(visitor)
+        return visitor.visitCompoundAss(this)
+    end
+
+    fun representativeToken()
+        return this.l.representativeToken()
+    end
+end
+
+class BinaryExpr is Expr
+    fun new(l, op, r)
+        this.op = op
+        this.l, this.r = l ,r
+    end
+
+    fun accept(visitor)
+        return visitor.visitBinary(this)
+    end
+
+    fun representativeToken()
+        return this.l.representativeToken()
+    end
+end
+
+class UnaryExpr is Expr
+    fun new(op, operand)
+        this.op = op
+        this.operand = operand
+    end
+
+    fun accept(visitor)
+        return visitor.visitUnary(this)
+    end
+
+    fun representativeToken()
+        return this.op
+    end
+end
+
+class ExponentExpr is Expr
+    fun new(base, pow, exponent)
+        this.base = base
+        this.pow = pow
+        this.exponent = exponent
+    end
+
+    fun accept(visitor)
+        return visitor.visitExponent(this)
+    end
+
+    fun representativeToken()
+        return this.base.representativeToken()
+    end
+end
+
+class TernaryExpr is Expr
+    fun new(thenExp, ifTok, cond, elseTok, elseExp)
+        this.ifTok, this.elseTok = ifTok, elseTok
+        this.cond = cond
+        this.thenExp = thenExp
+        this.elseExp = elseExp
+    end
+
+    fun accept(visitor)
+        return visitor.visitTernary(this)
+    end
+
+    fun representativeToken()
+        return this.thenExp.representativeToken()
+    end
+end
+
+class FuncLit is Expr
+    fun new(funTok, leftBracket, arguments, defaults, vararg, rightBracket, body)
+        this.funTok = funTok
+        this.name = null
+        this.leftBracket = leftBracket
+        this.arguments = arguments
+        this.defaults = defaults
+        this.vararg = vararg
+        this.rightBracket = rightBracket
+        this.body = body
+    end
+
+    fun accept(visitor)
+        return visitor.visitFuncLit(this)
+    end
+
+    fun representativeToken()
+        return this.funTok
+    end
+end
+
+class AttributeExpr is Expr
+    fun new(l, dot, name)
+        this.l, this.dot, this.name = l, dot, name
+    end
+
+    fun accept(visitor)
+        return visitor.visitAttribute(this)
+    end
+
+    fun representativeToken()
+        return this.l.representativeToken()
+    end
+end
+
+class CallExpr is Expr
+    fun new(l, leftBracket, expressions, rightBracket, isUnpack=false)
+        this.l = l
+        this.leftBracket = leftBracket
+        this.expressions = expressions
+        this.rightBracket = rightBracket
+        this.isUnpack = isUnpack
+    end
+
+    fun accept(visitor)
+        return visitor.visitCall(this)
+    end
+
+    fun representativeToken()
+        return this.l.representativeToken()
+    end
+end
+
+class ArrayAccessExpr is Expr
+    fun new(l, leftBracket, expression, rightBracket)
+        this.l = l
+        this.leftBracket = leftBracket
+        this.expression = expression
+        this.rightBracket = rightBracket
+    end
+
+    fun accept(visitor)
+        return visitor.visitArrayAccess(this)
+    end
+
+    fun representativeToken()
+        return this.l.representativeToken()
+    end
+end
+
+class NumLit is Expr
+    fun new(num)
+        this.num = num
+    end
+
+    fun accept(visitor)
+        return visitor.visitNum(this)
+    end
+
+    fun representativeToken()
+        return this.num
+    end
+end
+
+class StringLit is Expr
+    fun new(str)
+        this.str = str
+    end
+
+    fun accept(visitor)
+        return visitor.visitString(this)
+    end
+
+    fun representativeToken()
+        return this.str
+    end
+end
+
+class BoolLit is Expr
+    fun new(bool)
+        this.bool = bool
+    end
+
+    fun accept(visitor)
+        return visitor.visitBool(this)
+    end
+
+    fun representativeToken()
+        return this.bool
+    end
+end
+
+class NullLit is Expr
+    fun new(nil)
+        this.nil = nil
+    end
+
+    fun accept(visitor)
+        return visitor.visitNull(this)
+    end
+
+    fun representativeToken()
+        return this.nil
+    end
+end
+
+class VarLit is Expr
+    fun new(id)
+        this.id = id
+    end
+
+    fun accept(visitor)
+        return visitor.visitVarLit(this)
+    end
+
+    fun representativeToken()
+        return this.id
+    end
+end
+
+class SuperLit is Expr
+    fun new(superTok, name, leftBracket, arguments, rightBracket)
+        this.superTok = superTok
+        this.name = name
+        this.leftBracket = leftBracket
+        this.arguments = arguments
+        this.rightBracket = rightBracket
+    end
+
+    fun accept(visitor)
+        return visitor.visitSuper(this)
+    end
+
+    fun representativeToken()
+        return this.superTok
+    end
+end
+
+class ListLit is Expr
+    fun new(leftBracket, expressions, rightBracket)
+        this.leftBracket = leftBracket
+        this.expressions = expressions
+        this.rightBracket = rightBracket
+    end
+
+    fun accept(visitor)
+        return visitor.visitList(this)
+    end
+
+    fun representativeToken()
+        return this.leftBracket
+    end
+end
+
+class TupleLit is Expr
+    fun new(expressions, leftBracket=null, rightBracket=null)
+        this.expressions = expressions
+        this.leftBracket, this.rightBracket = leftBracket, rightBracket
+    end
+
+    fun accept(visitor)
+        return visitor.visitTuple(this)
+    end
+
+    fun representativeToken()
+        // TODO: store leftBracket and rightBracket in case of empty tuple
+        return this.expressions[0] if #this.expression != 0 else this.leftBracket
+    end
+end
+
+class TableEntry
+    fun new(key, val)
+        this.key, this.val = key, val
+    end
+end
+
+class TableLit is Expr
+    fun new(leftBracket, entries, rightBracket)
+        this.leftBracket = leftBracket
+        this.entries = entries
+        this.rightBracket = rightBracket
+    end
+
+    fun accept(visitor)
+        return visitor.visitTable(this)
+    end
+
+    fun representativeToken()
+        return this.leftBracket
+    end
+end

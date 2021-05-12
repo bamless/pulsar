@@ -1,0 +1,187 @@
+class Visitor
+    fun visitModule(module)
+        for var s in module.statements
+            s.accept(this)
+        end
+    end
+
+    fun visitFunc(func)
+        for var def in func.defaults
+            def.accept(this)
+        end
+        func.body.accept(this)
+    end
+
+    fun visitNative(nat)
+        for var def in nat.defaults
+            def.accept(this)
+        end
+    end
+
+    fun visitClass(cls)
+        if cls.superClass
+            cls.superClass.accept(this)
+        end
+        
+        for var meth in cls.methods
+            meth.accept(this)
+        end
+    end
+
+    fun visitVar(varDecl)
+        if varDecl.init
+            varDecl.init.accept(this)
+        end
+    end
+
+    fun visitBlock(block)
+        for var s in block.statements
+            s.accept(this)
+        end
+    end
+
+    fun visitIf(ifStmt)
+        ifStmt.cond.accept(this)
+        ifStmt.thenBody.accept(this)
+        if ifStmt.elseBody
+            ifStmt.elseBody.accept(this)
+        end
+    end
+
+    fun visitFor(forStmt)
+        if forStmt.init forStmt.init.accept(this) end
+        if forStmt.cond forStmt.cond.accept(this) end
+        if forStmt.action forStmt.action.accept(this) end
+        forStmt.body.accept(this)
+    end
+
+    fun visitForEach(forEach)
+        forEach.variable.accept(this)
+        forEach.iter.accept(this)
+        forEach.body.accept(this)
+    end
+
+    fun visitWhile(whileStmt)
+        whileStmt.cond.accept(this)
+        whileStmt.body.accept(this)
+    end
+
+    fun visitReturn(returnStmt)
+        if returnStmt.expr
+            returnStmt.expr.accept(this)
+        end
+    end
+
+    fun visitImport(importStmt_) end
+
+    fun visitTry(tryStmt)
+        tryStmt.tryBlock.accept(this)
+        if tryStmt.excepts
+            for var exc in tryStmt.excepts
+                exc.accept(this)
+            end
+        end
+        if tryStmt.ensureBlock tryStmt.ensureBlock.accept(this) end
+    end
+
+    fun visitExcept(exceptStmt)
+        exceptStmt.expression.accept(this)
+        exceptStmt.body.accept(this)
+    end
+
+    fun visitRaise(raiseStmt)
+        raiseStmt.expression.accept(this)
+    end
+
+    fun visitWith(withStmt)
+        withStmt.expression.accept(this)
+        withStmt.body.accept(this)
+    end
+
+    fun visitBreak(breakStmt_) end
+    fun visitContinue(continueStmt_) end
+
+    fun visitAssignment(assignment)
+        assignment.l.accept(this)
+        assignment.r.accept(this)
+    end
+
+    fun visitCompoundAss(compound)
+        compound.l.accept(this)
+        compound.r.accept(this)
+    end
+
+    fun visitBinary(binary)
+        binary.l.accept(this)
+        binary.r.accept(this)
+    end
+
+    fun visitUnary(unary)
+        unary.operand.accept(this)
+    end
+
+    fun visitExponent(exp)
+        exp.base.accept(this)
+        exp.exponent.accept(this)
+    end
+
+    fun visitTernary(ternary)
+        ternary.cond.accept(this)
+        ternary.thenExp.accept(this)
+        ternary.elseExp.accept(this)
+    end
+
+    fun visitFuncLit(funcLit)
+        for var def in funcLit.defaults
+            def.accept(this)
+        end
+        funcLit.body.accept(this)
+    end
+
+    fun visitAttribute(attribute)
+        attribute.l.accept(this)
+    end
+
+    fun visitCall(call)
+        call.l.accept(this)
+        for var expr in call.expressions
+            expr.accept(this)
+        end
+    end
+
+    fun visitArrayAccess(arrayAccess)
+        arrayAccess.l.accept(this)
+        arrayAccess.expression.accept(this)
+    end
+
+    fun visitNum(num_) end
+    fun visitString(str_) end
+    fun visitBool(bool_) end
+    fun visitNull(nil_) end
+    fun visitVarLit(varLit_) end
+
+    fun visitSuper(superLit)
+        for var e in superLit.arguments
+            e.accept(this)
+        end
+    end
+
+    fun visitList(list)
+        for var e in list.expressions
+            e.accept(this)
+        end
+    end
+
+    fun visitTuple(tuple)
+        for var e in tuple.expressions
+            e.accept(this)
+        end
+    end
+
+    fun visitTable(table)
+        for var entry in table.entries
+            entry.key.accept(this)
+            entry.val.accept(this)
+        end
+    end
+end

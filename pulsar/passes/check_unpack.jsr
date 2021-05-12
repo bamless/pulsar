@@ -1,0 +1,39 @@
+import parse.ast as ast
+
+import pulsar.passes.pass_visitor for PassVisitor
+
+static fun isConstUnpack(rvalue)
+    return rvalue is ast.TupleLit or rvalue is ast.ListLit
+end
+
+static fun isConstLiteral(expr)
+    return expr is ast.NumLit or
+           expr is ast.BoolLit or
+           expr is ast.StringLit or
+           expr is ast.NullLit
+end
+
+class UnpackChecker is PassVisitor
+    fun visitVar(varDecl)
+        if varDecl.unpack and varDecl.init
+            this._checkUnpack(varDecl.equal, #varDecl.names, varDecl.init)
+        end
+        super(varDecl)
+    end
+
+    fun visitAssignment(assign)
+        if assign.l is ast.TupleLit
+            this._checkUnpack(assign.equal, #assign.l.expressions, assign.r)
+        end
+        super(assign)
+    end
+
+    fun _checkUnpack(errTok, numUnpacks, rvalue)
+        if isConstLiteral(rvalue)
+            this._error("Right hand side of unpack must be a Tuple or a List", errTok)
+        elif isConstUnpack(rvalue) and numUnpacks > #rvalue.expressions
+            this._error("Too few values to unpack: expected {0}, got {1}" % 
+                        (numUnpacks,  #rvalue.expressions), errTok)
+        end
+    end
+end

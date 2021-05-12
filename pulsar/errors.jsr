@@ -1,0 +1,52 @@
+import io
+
+class ErrorReporter
+    fun startAnalysis(path_)
+        raise NotImplementedException()
+    end
+
+    fun reportError(msg_, tok_)
+        raise NotImplementedException()
+    end
+
+    fun endAnalysis()
+        raise NotImplementedException()
+    end
+end
+
+class CliReporter is ErrorReporter
+    fun new()
+        this._errors = []
+    end
+
+    fun startAnalysis(path)
+        this._path = path
+        this._errors.clear()
+    end
+
+    fun reportError(message, token)
+        var src = token.getSource()
+        var line = token.line()
+
+        var colStart = token.coloumn() - 1
+        var colEnd = token.coloumnEnd() - 1
+
+        var errorBuilder = ["File {0} [line {1}]:\n" % (this._path, line)]
+        errorBuilder.add(src.getLine(line))
+        errorBuilder.add("\n")
+        errorBuilder.add(" " * colStart)
+        errorBuilder.add("^")
+        errorBuilder.add("~" * (colEnd - colStart - 1))
+        errorBuilder.add("\n")
+        errorBuilder.add(message)
+
+        this._errors.add((line, errorBuilder.join()))
+    end
+
+    fun endAnalysis()
+        this._errors.sort(|err1, err2| => err1[0] - err2[0])
+        for var _, error in this._errors
+            io.stderr.writeln(error)
+        end
+    end
+end

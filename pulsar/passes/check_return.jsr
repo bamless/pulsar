@@ -1,0 +1,119 @@
+import parse.ast as ast
+
+import pulsar.passes.pass_visitor for PassVisitor
+
+// Stores information about an encountered function
+static class FuncItem
+    fun new(node)
+        this._node = node
+        this._returns = false
+    end
+
+    fun setAsReturning()
+        this._returns = true
+    end
+
+    fun doesReturn()
+        return this._returns
+    end
+end
+
+class ReturnChecker is PassVisitor
+    fun new(reporter)
+        super(reporter)
+        this._functions = []
+    end
+
+    fun visitFunc(func)
+        var funcItem = this._enterFunction(func)
+
+        var returnsOnAllPaths = func.body.accept(this)
+        if funcItem.doesReturn() and !returnsOnAllPaths
+            if func.name
+                this._error("Non-void function '{0}' doesn't return a value on all execution paths" %
+                            func.name.getLexeme(), func.name)
+            else
+                this._error("Non-void function does not return a value on all execution paths",
+                            func.funTok)
+            end
+        end
+
+        this._exitFunction()
+    end
+
+    fun visitFuncLit(funcLit)
+        this.visitFunc(funcLit)
+    end
+
+    fun visitBlock(block)
+        for var stmt in block.statements
+            var blockReturns = stmt.accept(this)
+            if blockReturns
+                return true
+            end
+        end
+        return false
+    end
+
+    fun visitIf(ifStmt)
+        ifStmt.cond.accept(this)
+        var thenReturns = ifStmt.thenBody.accept(this)
+        var elseReturns = ifStmt.elseBody.accept(this) if ifStmt.elseBody else false
+        return thenReturns and elseReturns
+    end
+
+    fun visitWith(withStmt)
+        withStmt.expression.accept(this)
+        return withStmt.body.accept(this)
+    end
+
+    fun visitTry(tryStmt)
+        var tryReturns = tryStmt.tryBlock.accept(this)
+
+        if tryStmt.excepts != null
+            for var exc in tryStmt.excepts
+                exc.accept(this)
+            end
+        end
+        
+        var ensureReturns = false
+        if tryStmt.ensureBlock
+            ensureReturns = tryStmt.ensureBlock.accept(this)
+        end
+        
+        return (tryReturns and !tryStmt.excepts) or ensureReturns
+    end
+
+    fun visitReturn(returnStmt)
+        if this._inMainScope()
+            this._error("Cannot use return outside of a function", returnStmt.returnTok)
+            return false
+        end
+
+        if !returnStmt.expr
+            return false
+        end
+
+        this._currentFunc().setAsReturning()
+        returnStmt.expr.accept(this)
+        return true
+    end
+
+    fun _enterFunction(node)
+        var func = FuncItem(node)
+        this._functions.add(func)
+        return func
+    end
+
+    fun _exitFunction()
+        this._functions.pop()
+    end
+
+    fun _currentFunc()
+        return this._functions[#this._functions - 1]
+    end
+
+    fun _inMainScope()
+        return #this._functions == 0
+    end
+end

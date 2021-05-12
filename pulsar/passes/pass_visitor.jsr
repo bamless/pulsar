@@ -1,0 +1,11 @@
+import parse.visitor for Visitor
+
+class PassVisitor is Visitor
+    fun new(reporter)
+        this._reporter = reporter
+    end
+
+    fun _error(message, token)
+        this._reporter.reportError(message, token)
+    end
+end

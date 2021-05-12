@@ -1,0 +1,63 @@
+class IOException is Exception end
+class FileNotFoundException is IOException end
+
+var Seek = Enum{
+    .SET : 0,
+    .CUR : 1,
+    .END : 2
+}
+
+class File is Iterable
+    native new(path, mode, handle=null)
+
+    native tell()
+    native seek(off, whence=0)
+    native rewind()
+
+    native read(bytes)
+    native readAll()
+    native readLine()
+    native write(data)
+    native close()
+    native flush()
+
+    fun writeln(data)
+        this.write(data)
+        this.write('\n')
+    end
+
+    fun size()
+        var oldpos = this.tell()
+        this.seek(0, Seek.END)
+        var size = this.tell()
+        this.seek(oldpos)
+        return size
+    end
+
+    fun __iter__(_)
+        return this.readLine()
+    end
+
+    fun __next__(line)
+        return line
+    end
+
+    fun __string__()
+        return "<" + ("closed " if this._closed else "open ") + super() + ">"
+    end
+end
+
+static class Popen is File
+    native new(name, mode)
+    native close()
+end
+
+fun popen(name, mode="r")
+    return Popen(name, mode)
+end
+
+native remove(path)
+native rename(oldpath, newpath)
+
+static native init()
+init()

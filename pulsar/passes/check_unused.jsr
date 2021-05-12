@@ -1,0 +1,158 @@
+import parse.ast as ast
+
+import pulsar.builtins as builtins
+import pulsar.passes.pass_visitor for PassVisitor
+import pulsar.symtable for SymbolTable
+
+// Variables which name ends in this string are ignored by the usage checker
+static var IGNORE_SUFFIX = "_"
+
+class UnusedChecker is PassVisitor
+    fun new(reporter)
+        super(reporter)
+        this._variables = SymbolTable()
+    end
+
+    fun visitModule(module)
+        this._enterScope()
+        super(module)
+        this._exitScope()
+    end
+
+    fun visitBlock(block)
+        this._enterScope()
+        super(block)
+        this._exitScope()
+    end
+
+    fun visitFunc(func)
+        if !this._inGlobalScope() or func.isStatic()
+            this._define(func.name)
+        end
+
+        this._enterScope()
+
+        for var arg in func.arguments
+            this._define(arg)
+        end
+
+        super(func)
+        
+        this._exitScope()
+    end
+
+    fun visitFuncLit(funcLit)
+        this._enterScope()
+
+        for var arg in funcLit.arguments
+            this._define(arg)
+        end
+
+        super(funcLit)
+        
+        this._exitScope()
+    end
+
+    fun visitNative(nat)
+        if !this._inGlobalScope() or nat.isStatic()
+            this._define(nat.name)
+        end
+        super(nat)
+    end
+
+    fun visitClass(cls)
+        if !this._inGlobalScope() or cls.isStatic()
+            this._define(cls.name)
+        end
+        super(cls)
+    end
+
+    fun visitVar(varDecl)
+        if !this._inGlobalScope() or varDecl.isStatic()
+            for var name in varDecl.names
+                this._define(name)
+            end
+        end
+        super(varDecl)
+    end
+
+    fun visitFor(forStmt)
+        this._enterScope()
+        super(forStmt)
+        this._exitScope()
+    end
+
+    fun visitForEach(forEach)
+        this._enterScope()
+        super(forEach)
+        this._exitScope()
+    end
+
+    fun visitWith(withStmt)
+        withStmt.expression.accept(this)
+
+        this._enterScope()
+
+        this._define(withStmt.name)
+        withStmt.body.accept(this)
+
+        this._exitScope()
+    end
+
+    fun visitExcept(exceptStmt)
+        this._enterScope()
+
+        exceptStmt.expression.accept(this)
+        this._define(exceptStmt.name)
+        
+        for var stmt in exceptStmt.body.statements
+            stmt.accept(this)
+        end
+
+        this._exitScope()
+    end
+
+    fun visitImport(importStmt)
+        if this._inGlobalScope() return end
+
+        if importStmt.asName
+            this._define(importStmt.asName)
+        elif importStmt.names
+            for var name in importStmt.names
+                this._define(name)
+            end
+        else
+            this._define(importStmt.modules[0])
+        end
+    end
+
+    fun visitVarLit(varLit)
+        var name = varLit.id.getLexeme()
+        if name.endsWith(IGNORE_SUFFIX)
+            this._error("Name '{0}' not ignored as it ought to be" % name, varLit.id)
+        end
+        this._variables.set(varLit.id, true)
+    end
+
+    fun _enterScope()
+        this._variables.enterScope()
+    end
+
+    fun _exitScope()
+        var used = this._variables.getScope(-1)
+        for var token in used
+            if !used[token] and !token.getLexeme().endsWith(IGNORE_SUFFIX)
+                this._error("Name '{0}' declared but not used" % token.getLexeme(), token)
+            end
+        end
+        this._variables.exitScope()
+    end
+
+    fun _define(token)
+        this._variables.insert(token, false)
+    end
+
+    fun _inGlobalScope()
+        return #this._variables == 1
+    end
+end

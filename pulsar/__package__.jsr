@@ -1,0 +1,16 @@
+import io
+
+import pulsar.pulsar for Pulsar
+
+fun run(args)
+    var pulsar = Pulsar()
+
+    for var path in args
+        try
+            print("Analyzing {0}..." % path)
+            pulsar.analyzeFile(path)
+        except io.IOException e
+            io.stderr.writeln("[Error] {0}" % e.err())
+        end
+    end
+end

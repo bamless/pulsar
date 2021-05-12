@@ -1,0 +1,1012 @@
+import parse.ast as ast
+import parse.lexer for Lexer
+import parse.token for Token, Type
+import parse.source for SourceFile
+
+static var OR_OP = {
+    Type.OR : true
+}
+
+static var AND_OP = {
+    Type.AND : true
+}
+
+static var RELATIONAL_OP = {
+    Type.EQUAL_EQUAL : true,
+    Type.BANG_EQ     : true,
+    Type.GE          : true,
+    Type.GT          : true,
+    Type.LE          : true,
+    Type.LT          : true,
+    Type.IS          : true
+}
+
+static var ADDITIVE_OP = {
+    Type.PLUS  : true,
+    Type.MINUS : true
+}
+
+static var MULTIPLICATIVE_OP = {
+    Type.MULT : true,
+    Type.DIV  : true,
+    Type.MOD  : true
+}
+
+static var BINARY_OR_OP = {
+    Type.PIPE : true
+}
+
+static var BINARY_AND_OP = {
+    Type.AMPER : true
+}
+
+static var BINARY_XOR_OP = {
+    Type.TILDE : true
+}
+
+static var BINARY_SHIFT_OP = {
+    Type.LSHIFT : true,
+    Type.RSHIFT : true
+}
+
+static var UNARY_OP = {
+    Type.TILDE     : true,
+    Type.BANG      : true,
+    Type.MINUS     : true,
+    Type.HASH      : true, 
+    Type.HASH_HASH : true
+}
+
+static var POSTFIX_OP = {
+    Type.LPAREN  : true,
+    Type.LCURLY  : true,
+    Type.DOT     : true,
+    Type.LSQUARE : true
+}
+
+static var COMPOUND_ASSIGN_OP = {
+    Type.PLUS_EQ  : true,
+    Type.MINUS_EQ : true,
+    Type.DIV_EQ   : true,
+    Type.MULT_EQ  : true,
+    Type.MOD_EQ   : true
+}
+
+static var IMPLICIT_STMT_END = {
+    Type.EOF    : true,
+    Type.END    : true,
+    Type.ELSE   : true,
+    Type.ELIF   : true,
+    Type.ENSURE : true,
+    Type.EXCEPT : true
+}
+
+static var EXPLICIT_STMT_END = {
+    Type.SEMICOLON : true,
+    Type.NEWLINE   : true
+}
+
+static var EXPRESSION_START = {
+    Type.NUMBER     : true,
+    Type.TRUE       : true,
+    Type.FALSE      : true,
+    Type.IDENTIFIER : true,
+    Type.STRING     : true,
+    Type.NULL       : true,
+    Type.SUPER      : true,
+    Type.LPAREN     : true,
+    Type.LSQUARE    : true,
+    Type.BANG       : true,
+    Type.MINUS      : true,
+    Type.FUN        : true,
+    Type.HASH       : true,
+    Type.HASH_HASH  : true,
+    Type.LCURLY     : true
+}
+
+static var DECL_START = {
+    Type.CLASS : true,
+    Type.FUN   : true,
+    Type.VAR   : true,
+    Type.NAT   : true
+}
+
+static var SYNC_TOKS = {
+    Type.FUN    : true,
+    Type.VAR    : true,
+    Type.FOR    : true,
+    Type.IF     : true,
+    Type.WHILE  : true,
+    Type.RETURN : true,
+    Type.BEGIN  : true,
+    Type.CLASS  : true
+}
+
+static var CLASS_SYNC_TOKS = {
+    Type.FUN : true,
+    Type.END : true
+}
+
+static fun isAssignment(token) 
+    return token.type == Type.EQUAL or COMPOUND_ASSIGN_OP[token.type]
+end
+
+static fun isLval(expr)
+    return expr is ast.VarLit or
+           expr is ast.AttributeExpr or
+           expr is ast.ArrayAccessExpr
+end
+
+static fun isConstLiteral(expr)
+    return expr is ast.NumLit or
+           expr is ast.BoolLit or
+           expr is ast.StringLit or
+           expr is ast.NullLit
+end
+
+static fun isCallExpr(expr)
+    return expr is ast.CallExpr or (expr is ast.SuperLit and expr.arguments)
+end
+
+// Recursive descent parser for the J* language
+// Basically mimics the C parser
+class Parser
+    fun new(sourceFile, errorCallback)
+        typeAssert(sourceFile, SourceFile, "sourceFile")
+        typeAssert(errorCallback, Function, "errorCallback")
+        this._lex = Lexer(sourceFile)
+        this._errorCallback = errorCallback
+        this._hadError = false
+        this._panic = false
+        this._curr = null
+        this._advance()
+    end
+
+    fun parse()
+        var program = this._program()
+
+        if !this._match(Type.EOF)
+            this._error('Unexpected token')
+        end
+
+        return program if !this._hadError else null
+    end
+
+    fun parseExpression()
+        var expression = this._expression()
+        this._skipNewLines()
+
+        if !this._match(Type.EOF)
+            this._error('Unexpected token')
+        end
+
+        return expression if !this._hadError else null
+    end
+
+    fun _program()
+        var statements = []
+
+        this._skipNewLines()
+        while !this._match(Type.EOF)
+            statements.add(this._statement())
+            this._skipNewLines()
+            if this._panic this._synchronize() end
+        end
+
+        return ast.AstModule(statements)
+    end
+
+    fun _blockStmt()
+        var statements = []
+        this._skipNewLines()
+        while !IMPLICIT_STMT_END[this._curr.type] and !EXPLICIT_STMT_END[this._curr.type]
+            statements.add(this._statement())
+            this._skipNewLines()
+        end
+        return ast.BlockStmt(statements)
+    end
+
+    fun _statement()
+        if this._match(Type.FUN)
+            return this._funcDecl()
+        elif this._match(Type.NAT)
+            return this._nativeDecl()
+        elif this._match(Type.CLASS)
+            return this._classDecl()
+        elif this._match(Type.VAR)
+            var vardecl = this._varDecl()
+            this._requireStmtEnd()
+            return vardecl
+        elif this._match(Type.STATIC)
+            return this._staticDecl()
+        elif this._match(Type.IF)
+            return this._ifStmt()
+        elif this._match(Type.FOR)
+            return this._forStmt()
+        elif this._match(Type.WHILE)
+            return this._whileStmt()
+        elif this._match(Type.RETURN)
+            return this._returnStmt()
+        elif this._match(Type.BEGIN)
+            this._require(Type.BEGIN)
+            var block = this._blockStmt()
+            this._require(Type.END)
+            return block
+        elif this._match(Type.IMPORT)
+            return this._importStmt()
+        elif this._match(Type.TRY)
+            return this._tryStmt()
+        elif this._match(Type.RAISE)
+            return this._raiseStmt()
+        elif this._match(Type.WITH)
+            return this._withStmt()
+        elif this._match(Type.BREAK)
+            var brk = ast.BreakStmt(this._advance())
+            this._requireStmtEnd()
+            return brk
+        elif this._match(Type.CONTINUE)
+            var cont = ast.ContinueStmt(this._advance())
+            this._requireStmtEnd()
+            return cont
+        end
+
+        var expr = this._exprStatement()
+        this._requireStmtEnd()
+
+        return expr
+    end
+
+    fun _exprStatement()
+        var expr = this._tupleLit()
+
+        if !isAssignment(this._curr) and !isCallExpr(expr)
+            this._error("Invalid syntax")
+        end
+        
+        if isAssignment(this._curr)
+            expr = this._assignExpr(expr, true)
+        end
+
+        return expr
+    end
+
+    fun _funcDecl()
+        var funTok = this._advance()
+        
+        var name = this._require(Type.IDENTIFIER)
+        var leftBracket = this._require(Type.LPAREN)
+
+        this._skipNewLines()
+        var arguments, defaults, vararg = this._formalArgs(Type.RPAREN)
+        this._skipNewLines()
+        
+        var rightBracket = this._require(Type.RPAREN)
+
+        var body = this._blockStmt()
+
+        this._require(Type.END)
+        return ast.FuncDecl(funTok, name, leftBracket, arguments, defaults, vararg,
+                            rightBracket, body)
+    end
+
+    fun _nativeDecl()
+        var nativeTok = this._advance()
+        var name = this._require(Type.IDENTIFIER)
+
+        var leftBracket = this._require(Type.LPAREN)
+        this._skipNewLines()
+        var arguments, defaults, vararg = this._formalArgs(Type.RPAREN)
+        var rightBracket = this._require(Type.RPAREN)
+
+        this._requireStmtEnd()
+        return ast.NativeDecl(nativeTok, name, leftBracket, arguments, defaults, 
+                              vararg, rightBracket)
+    end
+
+    fun _classDecl()
+        var classTok = this._advance()
+        var name = this._require(Type.IDENTIFIER)
+        
+        var superClass = null
+        if this._match(Type.IS)
+            this._advance()
+            superClass = this._expression()
+            if this._panic this._classSynchronize() end
+        end
+
+        this._skipNewLines()
+
+        var methods = []
+        while !this._match(Type.END) and !this._match(Type.EOF)
+            if this._match(Type.FUN)
+                methods.add(this._funcDecl())
+            elif this._match(Type.NAT)
+                methods.add(this._nativeDecl())
+            else
+                this._error('Expected function or native declaration')
+                this._advance()
+            end
+            this._skipNewLines()
+            if this._panic this._classSynchronize() end
+        end
+
+        this._require(Type.END)
+        return ast.ClassDecl(classTok, name, superClass, methods)
+    end
+
+    fun _varDecl()
+        var varTok = this._advance()
+
+        var names = []
+        var isUnpack = false
+
+        while this._match(Type.IDENTIFIER)
+            names.add(this._advance())
+            if this._match(Type.COMMA)
+                this._advance()
+                isUnpack = isUnpack or true
+            else
+                break
+            end
+        end
+
+        if #names == 0
+            this._error('Expected token IDENTIFIER')
+        end
+        
+        var init, equal = null, null
+        if this._match(Type.EQUAL)
+            equal = this._advance()
+            init = this._expression()
+        end
+
+        return ast.VarDecl(varTok, names, equal, init, isUnpack)
+    end
+
+    fun _staticDecl()
+        this._advance()
+        this._skipNewLines()
+
+        if !DECL_START[this._curr.type]
+            this._error("Only a declaration can be annotated `static`")
+            return
+        end
+
+        var decl = this._statement()
+        decl.setStatic()
+
+        return decl
+    end
+
+    fun _formalArgs(close)
+        var arguments, defaults, isVararg = [], [], false
+
+        while this._match(Type.IDENTIFIER)
+            var argument = this._advance()
+            this._skipNewLines()
+
+            if this._match(Type.EQUAL)
+                this._lex.rewindTo(argument)
+                this._advance()
+                break
+            end
+
+            arguments.add(argument)
+            this._skipNewLines()
+
+            if !this._match(close)
+                this._require(Type.COMMA)
+                this._skipNewLines()
+            end
+        end
+
+        while this._match(Type.IDENTIFIER)
+            var argument = this._advance()
+
+            this._skipNewLines()
+            var equal = this._require(Type.EQUAL)
+            this._skipNewLines()
+
+            var constant = this._literal()
+            this._skipNewLines()
+
+            if !isConstLiteral(constant)
+                this._error('Default argument must be a constant', equal)
+            end
+
+            arguments.add(argument)
+            defaults.add(constant)
+
+            if !this._match(close)
+                this._require(Type.COMMA)
+                this._skipNewLines()
+            end
+        end
+
+        if this._match(Type.VARARG)
+            this._advance()
+            this._skipNewLines()
+            isVararg = true
+        end
+
+        return arguments, defaults, isVararg
+    end
+
+    fun _ifBody(ifTok)
+        var cond = this._expression()
+        var thenBody = this._blockStmt()
+        var elseBody = null
+
+        if this._match(Type.ELIF)
+            var ifTok = this._require(Type.ELIF);
+            elseBody = ast.BlockStmt([this._ifBody(ifTok)])
+        elif this._match(Type.ELSE)
+            this._advance()
+            elseBody = this._blockStmt()
+        end
+
+        return ast.IfStmt(ifTok, cond, thenBody, elseBody)
+    end
+
+    fun _ifStmt()
+        var ifTok = this._advance()
+        var ifStmt = this._ifBody(ifTok)
+        this._require(Type.END)
+        return ifStmt
+    end
+
+    fun _forEachStmt(forTok, variable)
+        if variable.init
+            this._error('Variable declaration in foreach cannot have initializer', variable.equal)
+        end
+
+        var inTok = this._advance()
+        this._skipNewLines()
+
+        var iter = this._expression()
+        var body = this._blockStmt()
+        this._require(Type.END)
+
+        return ast.ForEachStmt(forTok, variable, inTok, iter, body)
+    end
+
+    fun _forStmt()
+        var forTok = this._advance()
+
+        var init = null
+        if !this._match(Type.SEMICOLON)
+            if this._match(Type.VAR)
+                init = this._varDecl()
+                if this._match(Type.IN)
+                    return this._forEachStmt(forTok, init)
+                end
+            else
+                init = this._expression()
+            end
+        end
+
+        this._require(Type.SEMICOLON)
+
+        var cond = null
+        if !this._match(Type.SEMICOLON) cond = this._expression() end
+        this._require(Type.SEMICOLON)
+
+        var action = null
+        if EXPRESSION_START[this._curr.type] action = this._expression() end
+
+        var body = this._blockStmt()
+        this._require(Type.END)
+
+        return ast.ForStmt(forTok, init, cond, action, body)
+    end
+
+    fun _whileStmt()
+        var whileTok = this._advance()
+        var cond = this._expression()
+        var body = this._blockStmt()
+        this._require(Type.END)
+        return ast.WhileStmt(whileTok, cond, body)
+    end
+
+    fun _returnStmt()
+        var retTok = this._advance()
+
+        var expr = null
+        if !IMPLICIT_STMT_END[this._curr.type] and !EXPLICIT_STMT_END[this._curr.type]
+            expr = this._expression()
+        end
+
+        return ast.ReturnStmt(retTok, expr)
+    end
+
+    fun _importStmt()
+        var importTok = this._advance()
+
+        var modules = [this._require(Type.IDENTIFIER)]
+        while this._match(Type.DOT)
+            this._advance()
+            modules.add(this._require(Type.IDENTIFIER))
+        end
+
+        var asName, names = null, null
+        if this._match(Type.FOR)
+            this._advance()
+            this._skipNewLines()
+
+            names = [this._require(Type.IDENTIFIER)]
+            while this._match(Type.COMMA)
+                this._advance()
+                this._skipNewLines()
+                names.add(this._require(Type.IDENTIFIER))
+            end
+        elif this._match(Type.AS)
+            this._require(Type.AS)
+            this._skipNewLines()
+            asName = this._require(Type.IDENTIFIER)
+        end
+
+        this._requireStmtEnd()
+        return ast.ImportStmt(importTok, modules, asName, names)
+    end
+
+    fun _tryStmt()
+        var tryTok = this._advance()
+        var tryBlock = this._blockStmt()
+
+        var ensureBlock, excepts = null, null
+        if this._match(Type.EXCEPT)
+            excepts = []
+            while this._match(Type.EXCEPT)
+                var exceptTok = this._advance()
+                var expression = this._expression()
+                var name = this._require(Type.IDENTIFIER)
+                var body = this._blockStmt()
+                excepts.add(ast.ExceptStmt(exceptTok, expression, name, body))
+            end
+        end
+
+        if this._match(Type.ENSURE)
+            this._advance()
+            ensureBlock = this._blockStmt()
+        end
+
+        if !ensureBlock and !excepts
+            this._error('Expected ensure or except clause')
+        end
+
+        this._require(Type.END)
+        return ast.TryStmt(tryTok, tryBlock, excepts, ensureBlock)
+    end
+
+    fun _raiseStmt()
+        var raiseTok = this._advance()
+        var expression = this._expression()
+        this._requireStmtEnd()
+        return ast.RaiseStmt(raiseTok, expression)
+    end
+
+    fun _withStmt()
+        var withTok = this._advance()
+
+        var expression = this._expression()
+        var name = this._require(Type.IDENTIFIER)
+        this._skipNewLines()
+
+        var body = this._blockStmt()
+        
+        this._require(Type.END)
+        return ast.WithStmt(withTok, expression, name, body)
+    end
+
+    fun _expression(parseTuple=true)
+        var l = this._tupleLit() if parseTuple else this._funLit();
+
+        if isAssignment(this._curr)
+            l = this._assignExpr(l, parseTuple);
+        end
+
+        return l
+    end
+
+    fun _assignExpr(l, parseTuple)
+        this._checkLvalue(l)
+        var assignTok = this._advance()
+        var r = this._expression(parseTuple)
+
+        if COMPOUND_ASSIGN_OP[assignTok.type]
+            return ast.CompoundAssExpr(l, assignTok, r)
+        else
+            return ast.AssignmentExpr(l, assignTok, r)
+        end
+    end
+
+    fun _tupleLit()
+        var e = this._funLit()
+
+        if this._match(Type.COMMA)
+            var expressions = [e]
+            while this._match(Type.COMMA)
+                this._advance()
+                if !EXPRESSION_START[this._curr.type] break end
+                expressions.add(this._funLit())
+            end
+            e = ast.TupleLit(expressions)
+        end
+
+        return e
+    end
+
+     fun _funLit()
+        if this._match(Type.FUN)
+            var funTok = this._advance()
+
+            var leftBracket = this._require(Type.LPAREN)
+            this._skipNewLines()
+
+            var arguments, defaults, vararg = this._formalArgs(Type.RPAREN)
+
+            var rightBracket = this._require(Type.RPAREN)
+            this._skipNewLines()
+
+            var body = this._blockStmt()
+            this._require(Type.END)
+
+            return ast.FuncLit(funTok, leftBracket, arguments, defaults, vararg, rightBracket, body)
+        end
+        if this._match(Type.PIPE)
+            var leftBracket = this._advance()
+            this._skipNewLines()
+
+            var arguments, defaults, vararg = this._formalArgs(Type.PIPE)
+            var rightBracket = this._require(Type.PIPE)
+
+            var arrow = this._require(Type.ARROW)
+            var body = ast.BlockStmt([ast.ReturnStmt(arrow, this._expression(false))])
+            
+            return ast.FuncLit(leftBracket, leftBracket, arguments, defaults, vararg, rightBracket,
+                               body)
+        end
+        return this._ternaryExpr()
+    end
+
+    fun _ternaryExpr()
+        var expr = this._orExpr()
+        if this._match(Type.IF)
+            var ifTok = this._advance()
+            var condition = this._ternaryExpr()
+            var elseTok = this._require(Type.ELSE)
+            var elseExp = this._ternaryExpr()
+            return ast.TernaryExpr(expr, ifTok, condition, elseTok, elseExp)
+        end
+        return expr
+    end
+
+    fun _parseBinary(tokens, operand)
+        var expr = operand()
+        while tokens[this._curr.type]
+            var op = this._advance()
+            this._skipNewLines()
+            expr = ast.BinaryExpr(expr, op, operand())
+        end
+        return expr
+    end
+
+    fun _orExpr()
+        return this._parseBinary(OR_OP, this._andExpr)
+    end
+
+    fun _andExpr()
+        return this._parseBinary(AND_OP, this._relationalExpr)
+    end
+
+    fun _relationalExpr()
+        return this._parseBinary(RELATIONAL_OP, this._borExpr)
+    end
+
+    fun _borExpr()
+        return this._parseBinary(BINARY_OR_OP, this._xorExpr)
+    end
+
+    fun _xorExpr()
+        return this._parseBinary(BINARY_XOR_OP, this._bandExpr)
+    end
+
+    fun _bandExpr()
+        return this._parseBinary(BINARY_AND_OP, this._shiftExpr)
+    end
+
+    fun _shiftExpr()
+        return this._parseBinary(BINARY_SHIFT_OP, this._additiveExpr)
+    end
+
+    fun _additiveExpr()
+        return this._parseBinary(ADDITIVE_OP, this._multiplicativeExpr)
+    end
+
+    fun _multiplicativeExpr()
+        return this._parseBinary(MULTIPLICATIVE_OP, this._unaryExpr)
+    end
+
+    fun _unaryExpr()
+        if UNARY_OP[this._curr.type]
+            return ast.UnaryExpr(this._advance(), this._unaryExpr())
+        end
+        return this._exponentExpr()
+    end
+
+    fun _exponentExpr()
+        var base = this._postfixExpr()
+        while this._match(Type.POW)
+            var pow = this._advance()
+            var exp = this._unaryExpr()
+            base = ast.ExponentExpr(base, pow, exp)
+        end
+        return base
+    end
+
+    fun _postfixExpr()
+        var lit = this._literal()
+        while POSTFIX_OP[this._curr.type]
+            if this._match(Type.DOT)
+                var dot = this._advance()
+                var name = this._require(Type.IDENTIFIER)
+                lit = ast.AttributeExpr(lit, dot, name)
+            elif this._match(Type.LCURLY)
+                var table = this._literal()
+                lit = ast.CallExpr(lit, table.leftBracket, [table], table.rightBracket)
+            elif this._match(Type.LPAREN)
+                var leftBracket = this._advance()
+                this._skipNewLines()
+
+                var expressions = []
+                while !this._match(Type.RPAREN)
+                    expressions.add(this._expression(false))
+                    this._skipNewLines()
+                    if !this._match(Type.COMMA) break end
+                    this._advance()
+                    this._skipNewLines()
+                end
+
+                var rightBracket = this._require(Type.RPAREN)
+
+                var isUnpack = false
+                if this._match(Type.VARARG)
+                    this._advance()
+                    isUnpack = true
+                end
+
+                lit = ast.CallExpr(lit, leftBracket, expressions, rightBracket, isUnpack)
+            elif this._match(Type.LSQUARE)
+                var leftBracket = this._advance()
+                this._skipNewLines()
+
+                var expression = this._expression()
+                this._skipNewLines()
+
+                var rightBracket = this._require(Type.RSQUARE)
+                lit = ast.ArrayAccessExpr(lit, leftBracket, expression, rightBracket)
+            end
+        end
+        return lit
+    end
+    
+    fun _literal()
+        var tok = this._curr
+        
+        if   tok.type == Type.NUMBER
+            return ast.NumLit(this._advance())
+        elif tok.type == Type.STRING
+            return ast.StringLit(this._advance())
+        elif tok.type == Type.NULL
+            return ast.NullLit(this._advance())
+        elif tok.type == Type.TRUE
+            return ast.BoolLit(this._advance())
+        elif tok.type == Type.FALSE
+            return ast.BoolLit(this._advance())
+        elif tok.type == Type.IDENTIFIER
+            return ast.VarLit(this._advance())
+        elif tok.type == Type.LSQUARE
+            return this._listExpr()
+        elif tok.type == Type.LCURLY
+            return this._tableExpr()
+        elif tok.type == Type.SUPER
+            return this._superExpr()
+        elif tok.type == Type.LPAREN
+            var leftBracket = this._advance()
+            this._skipNewLines()
+
+            if this._match(Type.RPAREN)
+                var rightBracket = this._advance()
+                return ast.Tuple([], leftBracket, rightBracket)
+            end
+
+            var expr = this._expression()
+            this._skipNewLines()
+
+            this._require(Type.RPAREN)
+            return expr
+        end
+
+        this._error('Expected expression')
+        this._advance()
+
+        return null
+    end
+
+    fun _listExpr()
+        var leftBracket = this._advance()
+        this._skipNewLines()
+
+        var elements = []
+        while !this._match(Type.RSQUARE)
+            elements.add(this._expression(false))
+            this._skipNewLines()
+            if !this._match(Type.COMMA) break end
+            this._advance()
+            this._skipNewLines()
+        end
+
+        var rightBracket = this._require(Type.RSQUARE)
+
+        return ast.ListLit(leftBracket, elements, rightBracket)
+    end
+
+    fun _tableExpr()
+        var leftBracket = this._advance()
+        this._skipNewLines()
+
+        var entries = []
+        while !this._match(Type.RCURLY)
+            var key
+            if this._match(Type.DOT)
+                this._advance()
+                key = ast.StringLit(this._require(Type.IDENTIFIER))
+            else
+                key = this._expression(false)
+            end
+
+            this._skipNewLines()
+            this._require(Type.COLON)
+            this._skipNewLines()
+
+            var value = this._expression(false)
+            this._skipNewLines()
+
+            if this._hadError break end
+
+            entries.add(ast.TableEntry(key, value))
+
+            if !this._match(Type.RCURLY)
+                this._require(Type.COMMA)
+                this._skipNewLines()
+            end
+        end
+
+        var rightBracket = this._require(Type.RCURLY)
+        return ast.TableLit(leftBracket, entries, rightBracket)
+    end
+
+    fun _superExpr()
+        var superTok = this._advance()
+
+        var name = null
+        if this._match(Type.DOT)
+            this._advance()
+            name = this._require(Type.IDENTIFIER)
+        end
+
+        var leftBracket, rightBracket = null, null
+        var expressions = null
+
+        if this._match(Type.LPAREN)
+            expressions = []
+            leftBracket = this._advance()
+            this._skipNewLines()
+
+            while !this._match(Type.RPAREN)
+                expressions.add(this._expression(false))
+                this._skipNewLines()
+                if !this._match(Type.COMMA) break end
+                this._advance()
+                this._skipNewLines()
+            end
+
+            rightBracket = this._require(Type.RPAREN)
+        elif this._match(Type.LCURLY)
+            expressions.add(this._tableExpr())
+        end
+
+        return ast.SuperLit(superTok, name, leftBracket, expressions, rightBracket)
+    end
+
+    fun _match(type)
+        return this._curr.type == type
+    end
+
+    fun _advance()
+        var prev = this._curr
+        
+        this._curr = this._lex.next()
+        while this._curr.type == Type.ERR or this._curr.type == Type.UNTERMINATED_STR
+            this._error('Invalid token' if this._curr.type == Type.ERR else 'Unterminated String')
+            prev = this._curr
+            this._curr = this._lex.next()
+        end
+        
+        return prev
+    end
+
+    fun _require(type)
+        if this._match(type)
+            return this._advance()
+        end
+        this._error("Expected token `{0}`, instead got `{1}`" %
+                    (Type.name(type), Type.name(this._curr.type)))
+        return Token(this._lex._src, Type.ERR, 0, 0)
+    end
+
+    fun _requireStmtEnd()
+        if !IMPLICIT_STMT_END[this._curr.type]
+            if this._match(Type.SEMICOLON) or this._match(Type.NEWLINE)
+                return this._advance()
+            else
+                this._error('Expected token `;` or `newline`')
+            end
+        end
+        return null
+    end
+
+    fun _skipNewLines()
+        while this._curr.type == Type.NEWLINE
+            this._advance()
+        end
+    end
+
+    fun _error(msg, tok=null)
+        if !this._panic 
+            this._hadError = this._panic = true
+            this._errorCallback("Syntax Error: {0}" % msg, tok if tok else this._curr)
+        end
+    end
+
+    fun _synchronize()
+        this._panic = false
+        while !this._match(Type.EOF)
+            if SYNC_TOKS[this._curr.type]
+                return
+            end
+            this._advance()
+        end
+    end
+
+    fun _classSynchronize()
+        this._panic = false
+        while !this._match(Type.EOF)
+            if CLASS_SYNC_TOKS[this._curr.type]
+                return
+            end
+            this._advance()
+        end
+    end
+
+    fun _checkLvalue(expr)
+        if expr is ast.TupleLit
+            this._checkUnpackAssignment(expr)
+        elif !isLval(expr)
+            this._error('Left hand side of assignment must be an lvalue')
+        end
+    end
+
+    fun _checkUnpackAssignment(tuple)
+        if this._curr.type != Type.EQUAL
+            this._error('Cannot unpack compound assignment')
+            return
+        end
+        for var expr in tuple.expressions
+            if !isLval(expr)
+                this._error('Left hand side of assignment must be an lvalue')
+                break
+            end
+        end
+    end
+end

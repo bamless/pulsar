@@ -1,0 +1,398 @@
+import parse.ast as ast
+
+import pulsar.builtins as builtins
+import pulsar.passes.pass_visitor for PassVisitor
+import pulsar.symtable for SymbolTable
+
+// Stores information about a declared variable
+static class Variable
+    fun new(name, line, scope)
+        this.name = name
+        this.line = line
+        this.scope = scope
+    end
+
+    fun __eq__(o)
+        return type(o) == type(this) and this.name == o.name and this.scope == o.scope
+    end
+
+    fun __hash__()
+        return this.name.__hash__() + this.scope.__hash__()
+    end
+end
+
+// Computes the intersection of two Tables, only considering keys 
+static fun intersect(table1, table2)
+    var res = {}
+    for var key in table1
+        if table2.contains(key)
+            res[key] = true
+        end
+    end
+    return res
+end
+
+// Variable resolver
+// Walks the AST and makes sure that variables respect scoping rules
+// Additionally, it detects and reports some common errors, such as use before declaration of
+// static globals and possibly uninitialized variables
+class VariableResolver is PassVisitor
+    fun new(reporter)
+        super(reporter)
+        this._variables = SymbolTable()
+        this._initialized = SymbolTable()
+        this._functionDepth = 0
+        this._fwdRefs = []
+    end
+
+    fun visitModule(module)
+        this._enterScope()
+        
+        super(builtins.getBuiltinModule("core.jsr"))
+        this._visitAndMergeInit(module.statements)
+
+        this._resolveFwdRefs()
+        this._exitScope()
+    end
+
+    // Visits a block and returns a Table containing the variables initialized in it
+    fun visitBlock(block)
+        this._enterScope()
+
+        this._visitAndMergeInit(block.statements)
+
+        var initState = this._initialized.getScope(-1)
+        this._exitScope()
+
+        return initState
+    end
+
+    // Visits a set of statements and merges variable initialization
+    // state of sub-statements into the current scope
+    fun _visitAndMergeInit(statements)
+        for var stmt in statements
+            var initState = stmt.accept(this)
+            if initState
+                this._mergeInitState(initState)
+            end
+        end
+    end
+
+    // Merges a Table containing variable initialization state into the current scope
+    fun _mergeInitState(initState)
+        for var variable in initState
+            if variable.scope <= this._getCurScope()
+                this._setInitialized(variable)
+            end
+        end
+    end
+
+    // -----------------------------------------------------------------------------
+    // DECLARATIONS
+    // -----------------------------------------------------------------------------
+
+    fun visitFunc(func)
+        if func.isStatic()
+            this._detectUseBefore(func.name)
+        end
+        this._define(func.name, true)
+        this._visitFuncBody(func)
+    end
+
+    fun visitClass(cls)
+        if cls.isStatic()
+            this._detectUseBefore(cls.name)
+        end
+
+        this._define(cls.name, true)
+
+        if cls.superClass
+            cls.superClass.accept(this)
+        end
+
+        for var meth in cls.methods
+            if meth is ast.FuncDecl
+                this._visitFuncBody(meth, true)
+            end
+        end
+    end
+
+    fun _visitFuncBody(func, isMethod=false)
+        this._enterFunction()
+
+        if isMethod
+            this._defineName('this', func.funTok.line(), this._getCurScope(), true)
+        end
+
+        if func.vararg
+            this._defineName('args', func.funTok.line(), this._getCurScope(), true)
+        end
+
+        for var arg in func.arguments
+            this._define(arg, true)
+        end
+
+        this._visitAndMergeInit(func.body.statements)
+        this._exitFunction()
+    end
+
+    fun visitNative(nat)
+        if nat.isStatic()
+            this._detectUseBefore(nat.name)
+        end
+        this._define(nat.name, true)
+        super(nat)
+    end
+
+    fun visitVar(varDecl)
+        var variables = []
+        for var id in varDecl.names
+            if varDecl.isStatic()
+                this._detectUseBefore(id)
+            end
+            variables.add(this._define(id, false))
+        end
+
+        super(varDecl)
+
+        if varDecl.init != null
+            for var variable in variables
+                this._setInitialized(variable)
+            end
+        end
+    end
+
+    fun _detectUseBefore(token)
+        var name = token.getLexeme()
+        for var fwd in this._fwdRefs
+            if name == fwd.getLexeme()
+                this._error("Static name '{0}' referenced before declaration (line {1})" %
+                            (name, token.line()), fwd)
+            end
+        end
+    end
+
+    // -----------------------------------------------------------------------------
+    // STATEMENTS
+    // -----------------------------------------------------------------------------
+
+    // Visits an `if` statement and retuns variables initialized in both branches
+    fun visitIf(ifStmt)
+        ifStmt.cond.accept(this)
+
+        var thenInit = ifStmt.thenBody.accept(this)
+
+        var elseInit = {}
+        if ifStmt.elseBody
+            elseInit = ifStmt.elseBody.accept(this)
+        end
+
+        return intersect(thenInit, elseInit)
+    end
+
+    // Visits a for statement and returns variables initialized in its head
+    fun visitFor(forStmt)
+        this._enterScope()
+
+        if forStmt.init forStmt.init.accept(this) end
+        if forStmt.cond forStmt.cond.accept(this) end
+        if forStmt.action forStmt.action.accept(this) end
+
+        forStmt.body.accept(this)
+        
+        var initState = this._initialized.getScope(-1)
+        this._exitScope()
+
+        return initState
+    end
+
+    fun visitTry(tryStmt)
+        var tryInit = tryStmt.tryBlock.accept(this)
+
+        var excInit = null
+        if tryStmt.excepts != null
+            for var exc in tryStmt.excepts
+                var init = exc.accept(this)
+
+                if excInit
+                    excInit = intersect(excInit, tryInit)
+                else
+                    excInit = init
+                end
+            end
+        end
+
+        var ensureInit = null
+        if tryStmt.ensureBlock
+            ensureInit = tryStmt.ensureBlock.accept(this)
+        end
+
+        return intersect(tryInit, excInit) if !tryStmt.ensureBlock else ensureInit
+    end
+
+    fun visitExcept(exceptStmt)
+        this._enterScope()
+       
+        exceptStmt.expression.accept(this)
+        this._define(exceptStmt.name, true)
+
+        for var stmt in exceptStmt.body.statements
+            stmt.accept(this)
+        end
+
+        var initState = this._initialized.getScope(-1)
+        this._exitScope()
+
+        return initState
+    end
+
+    fun visitForEach(forEach)
+        forEach.iter.accept(this)
+
+        this._enterScope()
+
+        forEach.variable.accept(this)
+        for var id in forEach.variable.names
+            var variable = this._lookupVariable(id)
+            this._setInitialized(variable)
+        end
+
+        for var s in forEach.body.statements
+            s.accept(this)
+        end
+
+        this._exitScope()
+    end
+
+    fun visitWith(withStmt)
+        withStmt.expression.accept(this)
+
+        this._enterScope()
+
+        this._define(withStmt.name, true)
+        withStmt.body.accept(this)
+
+        this._exitScope()
+    end
+
+    fun visitImport(importStmt)
+        if importStmt.asName
+            this._define(importStmt.asName, true)
+        elif importStmt.names
+            for var name in importStmt.names
+                this._define(name, true)
+            end
+        else
+            this._define(importStmt.modules[0], true)
+        end
+    end
+
+    // -----------------------------------------------------------------------------
+    // EXPRESSIONS
+    // -----------------------------------------------------------------------------
+
+    fun visitAssignment(assign)
+        assign.r.accept(this)
+
+        if assign.l is ast.TupleLit
+            for var lhs in assign.l.expressions
+                if lhs is ast.VarLit
+                    var variable = this._lookupVariable(lhs.id)
+                    this._setInitialized(variable)
+                end
+            end
+        elif assign.l is ast.VarLit
+            var variable = this._lookupVariable(assign.l.id)
+            this._setInitialized(variable)
+        end
+
+        assign.l.accept(this)
+    end
+
+    fun visitVarLit(varLit)
+        this._resolve(varLit.id)
+    end
+
+    fun visitFuncLit(funcLit)
+        this._visitFuncBody(funcLit)
+    end
+
+    fun _enterFunction()
+        this._enterScope()
+        this._functionDepth += 1
+    end
+
+    fun _exitFunction()
+        this._functionDepth -= 1
+        this._exitScope()
+    end
+
+    fun _enterScope()
+        this._variables.enterScope()
+        this._initialized.enterScope()
+    end
+
+    fun _exitScope()
+        this._variables.exitScope()
+        this._initialized.exitScope()
+    end
+
+    fun _lookupVariable(token)
+        return this._variables.lookup(token.getLexeme())
+    end
+
+    fun _define(token, init)
+        var prevDecl = this._variables.lookupAt(token.getLexeme(), -1)
+        if !prevDecl
+            return this._defineName(token.getLexeme(), token.line(), this._getCurScope(), init)
+        else
+            this._error("Variable '{0}' already declared, previous declaration at line {1}" %
+                        (prevDecl.name, prevDecl.line), token)
+            return null
+        end
+    end
+
+    fun _defineName(name, line, scope, init)
+        var variable = Variable(name, line, scope)
+        this._variables.insert(name, variable)
+        if init this._setInitialized(variable) end
+        return variable
+    end
+
+    fun _setInitialized(variable)
+        if !variable return end
+        this._initialized.insert(variable, true)
+    end
+
+    fun _resolve(token)
+        var variable = this._lookupVariable(token)
+        if variable
+            if !this._initialized.lookup(variable)
+                this._error("Variable '{0}' (declared at line {1}) may be uninitialized" %
+                            (variable.name, variable.line), token)
+            end
+        elif !this._inMainScope()
+            this._fwdRefs.add(token)
+        else
+            this._error("Cannot resolve name '{0}'" % token.getLexeme(), token)
+        end
+    end
+
+    fun _resolveFwdRefs()
+        for var token in this._fwdRefs
+            this._resolve(token)
+        end
+    end
+
+    // -----------------------------------------------------------------------------
+    // UTILITY METHODS
+    // -----------------------------------------------------------------------------
+
+    fun _inMainScope()
+        return this._functionDepth == 0
+    end
+
+    fun _getCurScope()
+        return #this._variables - 1
+    end
+end

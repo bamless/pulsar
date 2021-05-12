@@ -1,0 +1,135 @@
+var Type = Enum(
+    'LPAREN',
+    'RPAREN',
+    'LSQUARE',
+    'RSQUARE',
+    'LCURLY',
+    'RCURLY',
+
+    'BANG',
+    'BANG_EQ',
+    'COMMA',
+    'DOT',
+    'VARARG',
+    'ARROW',
+
+    'EQUAL',
+    'PLUS_EQ',
+    'MINUS_EQ',
+    'DIV_EQ',
+    'MULT_EQ',
+    'MOD_EQ',
+
+    'EQUAL_EQUAL',
+    'GT',
+    'GE',
+    'LT',
+    'LE',
+    'LSHIFT',
+    'RSHIFT',
+    'PLUS',
+    'MINUS',
+    'DIV',
+    'MULT',
+    'MOD',
+    'POW',
+    'HASH',
+    'HASH_HASH',
+    'AMPER',
+    'TILDE',
+
+    'COLON',
+    'PIPE',
+    'SEMICOLON',
+    'IN',
+
+    'BEGIN',
+    'END',
+
+    'IDENTIFIER',
+    'STRING',
+    'COMMAND',
+    'NUMBER',
+
+    'AND',
+    'CLASS',
+    'ELSE',
+    'FALSE',
+    'NAT',
+    'FUN',
+    'FOR',
+    'IF',
+    'ELIF',
+    'NULL',
+    'OR',
+    'PRINT',
+    'RETURN',
+    'IMPORT',
+    'AS',
+    'IS',
+    'SUPER',
+    'TRUE',
+    'VAR',
+    'STATIC',
+    'WHILE',
+    'CONTINUE',
+    'BREAK',
+
+    'TRY',
+    'EXCEPT',
+    'ENSURE',
+    'RAISE',
+    'WITH',
+
+    'UNTERMINATED_STR',
+    'NEWLINE',
+    'ERR',
+    'EOF'
+)
+
+class Token
+    fun new(source, type, start, length)
+        this.type = type
+        this._source = source
+        this._start = start
+        this._length = length
+        this._lexeme = null
+    end
+
+    fun getLexeme()
+        if this._lexeme return this._lexeme end
+        return this._lexeme = this._source[this._start, this._start + this._length]
+    end
+
+    fun line()
+        return this._source.lineAt(this._start)
+    end
+
+    fun lineEnd()
+        return this._source.lineAt(this._start + this._length)
+    end
+
+    fun coloumn()
+        return this._source.coloumnAt(this._start)
+    end
+
+    fun coloumnEnd()
+        return this._source.coloumnAt(this._start + this._length)
+    end
+
+    fun getSource()
+        return this._source
+    end
+
+    fun __eq__(o)
+        return type(this) == type(o) and this.getLexeme() == o.getLexeme()
+    end
+
+    fun __hash__()
+        return this.getLexeme().__hash__()
+    end
+
+    fun __string__()
+        return "Token({0}) '{1}'" % (Type.name(this.type), this.getLexeme().escaped()) 
+    end
+end

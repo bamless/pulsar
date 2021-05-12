@@ -1,0 +1,561 @@
+// Declare special symbols declared by the VM on initialization but not mentioned in the core file.
+// The initialization to `0` is here only to not let the variable resolver complain about
+// uninitialized variables
+var __name__, Object, Class = 0, 0, 0
+
+// --------------------- Start of real `core.jsr` file -------------------------
+
+// -----------------------------------------------------------------------------
+// BUILTIN OBJECTS
+// -----------------------------------------------------------------------------
+
+var argv, importPaths = [], []
+
+// -----------------------------------------------------------------------------
+// BUILTIN CLASSES
+// -----------------------------------------------------------------------------
+
+class Number
+    native new(n)
+    native isInt()
+    native __string__()
+    native __hash__()
+end
+
+class Boolean
+    native new(b)
+    native __string__()
+    native __hash__()
+end
+
+class Null
+    native __string__()
+end
+
+class Function
+    native __string__()
+end
+
+class Module
+    native __string__()
+end
+
+class StackTrace end
+class Userdata end
+
+class Iterable
+    native join(sep="")
+
+    fun collect(collector)
+        return collector(this)
+    end
+
+    fun forEach(func)
+        for var e in this
+            func(e)
+        end
+    end
+
+    fun sum()
+        var res = 0
+        for var e in this
+            res += e
+        end
+        return res
+    end
+
+    fun reduce(init, fn)
+        var acc = init
+        for var e in this
+            acc = fn(acc, e)
+        end
+        return acc
+    end
+
+    fun any(predicate)
+        for var e in this
+            if predicate(e)
+                return true
+            end
+        end
+        return false
+    end
+
+    fun all(predicate)
+        for var e in this
+            if !predicate(e)
+                return false
+            end
+        end
+        return true
+    end
+
+    fun enumerate(start=0) 
+        return EnumerateIter(this, start)
+    end
+
+    fun concat(iterable)
+        return ConcatIter(this, iterable)
+    end
+
+    fun map(fn)
+        return MapIter(fn, this)
+    end
+
+    fun filter(fn) 
+        return FilterIter(fn, this)
+    end
+
+    fun skip(count)
+        return SkipIter(this, count)
+    end
+
+    fun take(count)
+        return TakeIter(this, count)
+    end
+
+    fun zip(iterable)
+        return ZipIter(this, iterable)
+    end
+
+    fun sorted()
+        var lst = List(this)
+        lst.sort()
+        return lst
+    end
+end
+
+class Sequence is Iterable
+    fun contains(e)
+        return this.indexOf(e) != -1
+    end
+
+    fun indexOf(e)
+        var length = #this
+        for var i = 0; i < length; i += 1
+            if this[i] == e
+                return i
+            end
+        end
+        return -1
+    end
+
+    fun indexOfLast(e)
+        for var i = #this - 1; i >= 0; i -= 1
+            if this[i] == e
+                return i
+            end
+        end
+        return -1
+    end
+
+    fun count(e)
+        var count = 0
+        for var o in this
+            if o == e 
+                count += 1
+            end
+        end
+        return count
+    end
+
+    fun empty()
+        return #this == 0
+    end
+
+    fun reversed()
+        return ReversedSequence(this)
+    end
+
+    fun __eq__(other)
+        if type(other) != type(this)
+            return false 
+        end
+
+        var length = #this
+        if length != #other
+            return false
+        end
+
+        for var i = 0; i < length; i += 1
+            if this[i] != other[i]
+                return false
+            end
+        end
+        return true
+    end
+end
+
+class String is Sequence
+    native new(...)
+    native charAt(idx)
+    native startsWith(prefix, offset=0)
+    native endsWith(suffix)
+    native split(separator)
+    native strip()
+    native chomp()
+    native escaped()
+    native __mul__(reps)
+    native __mod__(args)
+    native __eq__(o)
+    native __len__()
+    native __iter__(iter)
+    native __next__(idx)
+    native __string__()
+    native __hash__()
+
+    fun __rmul__(reps)
+        return this.__mul__(reps)
+    end
+end
+
+class List is Sequence
+    native new(n=0, init=null)
+    native add(e)
+    native insert(i, e)
+    native removeAt(i)
+    native clear()
+    native sort(comparator=null)
+    native __len__()
+    native __add__(other)
+    native __eq__(other)
+    native __iter__(iter)
+    native __next__(idx)
+
+    fun addAll(iterable)
+        var changed = false
+        for var e in iterable
+            this.add(e)
+            changed = true
+        end
+        return changed
+    end
+
+    fun insertAll(iterable, i=0)
+        var changed = false
+        for var e in iterable
+            this.insert(i, e)
+            changed = true
+        end
+        return changed
+    end
+
+    fun remove(e)
+        var length = #this
+        for var i = 0; i < length; i += 1
+            if e == this[i]
+                this.removeAt(i)
+                return true
+            end
+        end
+        return false
+    end
+
+    fun removeAll(iterable)
+        var changed = false
+        for var e in iterable
+            var r = this.remove(e)
+            changed = changed or r
+        end
+        return changed
+    end
+
+    fun pop()
+        return this.removeAt(#this - 1)
+    end
+
+    fun __string__()
+        return "[" + this.join(", ") + "]"
+    end
+end
+
+class Tuple is Sequence
+    native new(iterable=null)
+    native __len__()
+    native __add__(other)
+    native __eq__(other)
+    native __iter__(iter)
+    native __next__(idx)
+    native __hash__()
+
+    fun __string__()
+        return "(" + this.join(", ") + ")"
+    end
+end
+
+class Table is Iterable
+    native new(iterable=null)
+    native delete(key)
+    native clear()
+    native contains(key)
+    native keys()
+    native values()
+    native __get__(key)
+    native __set__(key, val)
+    native __len__()
+    native __iter__(i)
+    native __next__(i)
+    native __string__()
+end
+
+class Enum
+    native new(...)
+    native value(name)
+    native name(value)
+end
+
+// -----------------------------------------------------------------------------
+// BUILTIN FUNCTIONS
+// -----------------------------------------------------------------------------
+
+fun typeAssert(arg, cls, name)
+    if !(arg is cls)
+        var got, expected = cls.getName(), type(arg).getName()
+        raise TypeException("{0} must be a {1}, got {2}" % (name, got, expected))
+    end
+end
+
+fun assert(cond, msg="assertion failed", exception=null)
+    if !cond 
+        raise (exception(msg) if exception else AssertException(msg))
+    end
+end
+
+fun partial(fn, arg)
+    return |...| => fn(arg, args)...
+end
+
+native ascii(num)
+native char(c)
+native eval(source)
+native garbageCollect()
+native int(n)
+native print(s, ...)
+native type(o)
+
+// -----------------------------------------------------------------------------
+// BUILTIN ITERATORS
+// -----------------------------------------------------------------------------
+
+class ReversedSequence is Sequence
+    fun new(sequence)
+        this._sequence = sequence
+        this._size = #sequence
+    end
+
+    fun __get__(i)
+        try
+            return this._sequence[this._size - i - 1]
+        except IndexOutOfBoundException e
+            raise IndexOutOfBoundException(##i)
+        end
+    end
+
+    fun __len__()
+        return this._size
+    end
+
+    fun __iter__(idx)
+        if idx == null
+            return 0 if this._size > 0 else false
+        end
+        return idx + 1 if idx < this._size - 1 else false
+    end
+
+    fun __next__(idx)
+        return this._sequence[this._size - idx - 1]
+    end
+end
+
+class EnumerateIter is Iterable
+    fun new(iterable, start=0)
+        this._iterable = iterable
+        this._idx = start
+    end
+
+    fun __iter__(iter)
+        return this._iterable.__iter__(iter)
+    end
+
+    fun __next__(iter)
+        var ret = this._idx, this._iterable.__next__(iter)
+        this._idx += 1
+        return ret
+    end
+end
+
+class ConcatIter is Iterable
+    fun new(iterable1, iterable2)
+        this._currIter = iterable1
+        this._nextIter = iterable2
+    end
+
+    fun __iter__(iter)
+        var iterator = this._currIter.__iter__(iter)
+
+        if iterator
+            return iterator
+        elif this._nextIter
+            this._currIter, this._nextIter = this._nextIter, null
+            return this._currIter.__iter__(null)
+        end
+        
+        return false
+    end
+
+    fun __next__(iter)
+        return this._currIter.__next__(iter)
+    end
+end
+
+class FilterIter is Iterable
+    fun new(predicate, iterable)
+        this._predicate = predicate
+        this._iterable = iterable
+        this._next = null
+    end
+
+    fun __iter__(iter)
+        while iter = this._iterable.__iter__(iter)
+            var val = this._iterable.__next__(iter)
+            if this._predicate(val)
+                this._next = val
+                return iter
+            end
+        end
+        return false
+    end
+
+    fun __next__(_)
+        return this._next
+    end
+end
+
+class MapIter is Iterable
+    fun new(fn, iterable)
+        this._fn = fn
+        this._iterable = iterable
+    end
+
+    fun __iter__(iter)
+        return this._iterable.__iter__(iter)
+    end
+
+    fun __next__(iter)
+        return this._fn(this._iterable.__next__(iter))
+    end
+end
+
+class SkipIter is Iterable
+    fun new(iterable, count)
+        this._iterable = iterable
+        this._count = count
+    end
+
+    fun __iter__(iter)
+        if iter
+            return this._iterable.__iter__(iter)
+        end
+
+        var iterator = this._iterable.__iter__(iter)
+        var count = this._count
+
+        while count > 0
+            iterator = this._iterable.__iter__(iterator)
+            count -= 1
+        end
+
+        return iterator
+    end
+
+    fun __next__(iter)
+        return this._iterable.__next__(iter)
+    end
+end
+
+class TakeIter is Iterable
+    fun new(iterable, count)
+        this._iterable = iterable
+        this._count = count
+    end
+
+    fun __iter__(iter)
+        if this._count <= 0 
+            return false
+        end
+
+        this._count -= 1
+        return this._iterable.__iter__(iter)
+    end
+
+    fun __next__(iter)
+        return this._iterable.__next__(iter)
+    end
+end
+
+class ZipIter is Iterable
+    fun new(iterable1, iterable2)
+        this._iterable1 = iterable1
+        this._iterable2 = iterable2
+    end
+
+    fun __iter__(iters)
+        var iter1, iter2 = null, null
+        if iters != null
+            iter1, iter2 = iters
+        end
+
+        var res1 = this._iterable1.__iter__(iter1)
+        if !res1
+            return false
+        end
+
+        var res2 = this._iterable2.__iter__(iter2)
+        if !res2
+            return false
+        end
+
+        return res1, res2
+    end
+
+    fun __next__(iters)
+        var iter1, iter2 = iters
+        return this._iterable1.__next__(iter1), this._iterable2.__next__(iter2)
+    end
+end
+
+// -----------------------------------------------------------------------------
+// BUILTIN EXCEPTIONS
+// -----------------------------------------------------------------------------
+
+class Exception
+    fun new(err="", cause=null)
+        this._err = err
+        this._cause = cause
+        this._stacktrace = null
+    end
+
+    fun err()
+        return this._err
+    end
+
+    fun cause()
+        return this._cause
+    end
+
+    native printStacktrace()
+    native getStacktrace()
+end
+
+class TypeException is Exception end
+class NameException is Exception end
+class FieldException is Exception end
+class MethodException is Exception end
+class ImportException is Exception end
+class StackOverflowException is Exception end
+class SyntaxException is Exception end
+class InvalidArgException is Exception end
+class IndexOutOfBoundException is Exception end
+class AssertException is Exception end
+class NotImplementedException is Exception end
+class ProgramInterrupt is Exception end

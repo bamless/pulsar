@@ -1,0 +1,39 @@
+import parse.source as source
+import parse.parser for Parser
+
+import pulsar.passes.check_return for ReturnChecker
+import pulsar.passes.check_unused for UnusedChecker
+import pulsar.passes.check_unpack for UnpackChecker
+import pulsar.passes.check_unreach for UnreachableCodeChecker
+import pulsar.passes.resolve_var for VariableResolver
+import pulsar.errors for CliReporter
+
+class Pulsar
+    fun new(reporter=null)
+        this._reporter = reporter or CliReporter()
+    end
+
+    fun analyzeFile(path)
+        try
+            this._reporter.startAnalysis(path)
+
+            var parser = Parser(source.fromFile(path), this._reporter.reportError)
+            var ast = parser.parse()
+            if !ast return end
+
+            var varResolver = VariableResolver(this._reporter)
+            var unusedChecker = UnusedChecker(this._reporter)
+            var unpackChecker = UnpackChecker(this._reporter)
+            var returnChecker = ReturnChecker(this._reporter)
+            var unreachChecker = UnreachableCodeChecker(this._reporter)
+            
+            ast.accept(varResolver)
+            ast.accept(unusedChecker)
+            ast.accept(unpackChecker)
+            ast.accept(returnChecker)
+            ast.accept(unreachChecker)
+        ensure
+            this._reporter.endAnalysis()
+        end
+    end
+end

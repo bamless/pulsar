@@ -1,0 +1,100 @@
+// Scoped symbol table
+// Mantains association between a symbol and some data
+class SymbolTable
+    fun new()
+        this._scopes = []
+    end
+
+    // Push a new scope in the symbol table
+    fun enterScope()
+        this._scopes.add({})
+    end
+
+    // Pop a scope from the symbol table
+    // @returns a Table containing the symbol-data mapping of the discarded scope
+    fun exitScope()
+        return this._scopes.pop()
+    end
+
+    // Adds or updates a symbol in the outermost scope
+    // @arg symbol the symbol
+    // @arg value  data to associate to 'symbol'
+    // @returns true if 'symbol' wasn't already present in the outermost scope, false if it was
+    fun insert(symbol, value)
+        assert(value != null)
+        return this.insertAt(symbol, -1, value)
+    end
+
+    // Adds or updates a symbol in the given scope
+    // @arg symbol the symbol to be searched
+    // @arg depth  index of the scope in which the symbol will be added. If it's is negative, then
+    //             it's interpreted as an offset from the end of the scope stack
+    // @arg value  data to associate to 'symbol'
+    // @returns true if 'symbol' wasn't already present in the provided scope, false if it was
+    fun insertAt(symbol, depth, value)
+        assert(value != null)
+        var scope = this._scopes[depth if depth >= 0 else depth + #this._scopes]
+        var present = scope.contains(symbol)
+        scope[symbol] = value
+        return !present
+    end
+
+    // Find a symbol's data by walking the scope stack, from outer to inner
+    // @returns the data associated with 'symbol' if found, null otherwise
+    fun lookup(symbol)
+        for var scope in this._scopes.reversed()
+            if scope.contains(symbol)
+                return scope[symbol]
+            end
+        end
+        return null
+    end
+
+    // Find a symbol's data in a specific scope
+    // @arg symbol the symbol to be searched
+    // @arg depth  index of the scope in which the symbol will be added. If it's is negative, then
+    //             it's interpreted as an offset from the end of the scope stack
+    // @returns the data associated with the symbol if found in the requested scope, null otherwise
+    fun lookupAt(symbol, depth)
+        var scope = this._scopes[depth if depth >= 0 else depth + #this._scopes]
+        return scope[symbol]
+    end
+
+    // Updates the value of `symbol` 
+    // The symbol is searched from outer scope to inner, and only the first match is updated
+    // @returns true if succesfully found and updated 'symbol'
+    // @returns false if the symbol couldn't be found
+    fun set(symbol, value)
+        for var scope in this._scopes.reversed()
+            if scope.contains(symbol)
+                scope[symbol] = value
+                return true
+            end
+        end
+        return false
+    end
+
+    // Updates the value of `symbol`, only the requested scope at `depth` is searched for it 
+    // @returns true if succesfully found and updated 'symbol'
+    // @returns false if the symbol couldn't be found in the requested scope
+    fun setAt(symbol, depth, value)
+        var scope = this._scopes[depth]
+        if scope.contains(symbol)
+            scope[symbol] = value
+            return true
+        end
+        return false
+    end
+
+    // @arg index index of the scope to return. If it's is negative, then it's interpreted as an
+    //            offset from the end of the scope stack
+    // @returns a Table containing the symbol-data mapping of the scope at 'index'
+    fun getScope(index)
+        return this._scopes[index if index >= 0 else index + #this._scopes]
+    end
+
+    // @returns the number of scopes currently present in the symbol table
+    fun __len__()
+        return #this._scopes
+    end
+end

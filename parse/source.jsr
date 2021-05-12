@@ -1,0 +1,73 @@
+import re
+import io
+
+// Class that represent a single J* source file
+class SourceFile
+    fun new(path, src)
+        this.path = path
+        this._src = src
+        this._lines = this._getLines()
+    end
+
+    // Retuns the based-1 line number on which the byte at off belongs
+    // @arg off the offset of the byte
+    fun lineAt(off)
+        var lo, hi = 0, #this._lines - 1
+        while lo < hi - 1
+            var m = lo + int((hi - lo) / 2)
+            if off > this._lines[m]
+                lo = m
+            else
+                hi = m
+            end
+        end
+        return lo + 1
+    end
+
+    // Returns the based-1 coloumn number of the byte at off
+    // @arg off the offset of the byte
+    fun coloumnAt(off)
+        var line = this.lineAt(off) - 1
+        var col = off - this._lines[line]
+        return col if line != 0 else col + 1
+    end
+
+    // Returns a line of the source file
+    // @arg n the line number
+    fun getLine(n)
+        return this._src[this._lines[n - 1], this._lines[n]]
+    end
+
+    // Index the source code. Use the slice syntax [a, b] to get a portion of the code.
+    // @arg index integer or slice to get the underlying source code
+    fun __get__(idx)
+        return this._src[idx]
+    end
+
+    // Get the bytes' offsets of all newlines in the source
+    fun _getLines()
+        var lines = re.gmatch(this._src, '()\n')
+        // Add syntethic newlines at the start and at the end
+        lines.insert(0, 0)
+        lines.insert(#lines, #this._src)
+        return lines
+    end
+
+    fun charAt(i)
+        return this._src.charAt(i)
+    end
+
+    fun __len__()
+        return #this._src
+    end
+
+    fun __string__()
+        return '<Source File: ' + this.path + '>'
+    end
+end
+
+fun fromFile(path)
+    with io.File(path, 'r') f
+        return SourceFile(path, f.readAll())
+    end
+end

@@ -1,0 +1,43 @@
+native abs(x)
+native acos(x)
+native asin(x)
+native atan(x)
+native atan2(y, x)
+native ceil(x)
+native cos(x)
+native cosh(x)
+native deg(x)
+native exp(x)
+native floor(x)
+native frexp(x)
+native ldexp(x, exp)
+native log(x)
+native log10(x)
+native max(x, y)
+native min(x, y)
+native rad(x)
+native sin(x)
+native sinh(x)
+native sqrt(x)
+native tan(x)
+native tanh(x)
+native modf(x)
+native random()
+native seed(s)
+
+fun randint(a, b=null)
+    if b == null
+        a, b = 0, a
+    end
+
+    typeAssert(a, Number, "a")
+    typeAssert(b, Number, "b")
+
+    assert(a.isInt() and b.isInt(), "a and b must be integers")
+    assert(a < b, "a must be < b")
+
+    return int(a + random() * (b - a + 1))
+end
+
+static native init()
+init()

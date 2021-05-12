@@ -1,0 +1,393 @@
+import parse.token for Token, Type
+
+static var KEYWORDS = {
+    'and'      : Type.AND,
+    'class'    : Type.CLASS,
+    'else'     : Type.ELSE,
+    'false'    : Type.FALSE,
+    'for'      : Type.FOR,
+    'fun'      : Type.FUN,
+    'native'   : Type.NAT,
+    'if'       : Type.IF,
+    'elif'     : Type.ELIF,
+    'null'     : Type.NULL,
+    'or'       : Type.OR,
+    'return'   : Type.RETURN,
+    'super'    : Type.SUPER,
+    'true'     : Type.TRUE,
+    'var'      : Type.VAR,
+    'static'   : Type.STATIC,
+    'while'    : Type.WHILE,
+    'import'   : Type.IMPORT,
+    'in'       : Type.IN,
+    'begin'    : Type.BEGIN,
+    'end'      : Type.END,
+    'as'       : Type.AS,
+    'is'       : Type.IS,
+    'try'      : Type.TRY,
+    'ensure'   : Type.ENSURE,
+    'except'   : Type.EXCEPT,
+    'raise'    : Type.RAISE,
+    'with'     : Type.WITH,
+    'continue' : Type.CONTINUE,
+    'break'    : Type.BREAK
+}
+
+static var Char = Enum{
+    .nul     : char('\0'),
+    .zero    : char('0'),
+    .nine    : char('9'),
+    .a       : char('a'),
+    .e       : char('e'),
+    .f       : char('f'),
+    .x       : char('x'),
+    .z       : char('z'),
+    .A       : char('A'),
+    .Z       : char('Z'),
+    .hash    : char('#'),
+    .bang    : char('!'),
+    .lparen  : char('('),
+    .rparen  : char(')'),
+    .semicol : char(';'),
+    .colon   : char(':'),
+    .pipe    : char('|'),
+    .amper   : char('&'),
+    .tilde   : char('~'),
+    .comma   : char(','),
+    .lsquare : char('['),
+    .rsquare : char(']'),
+    .lcurly  : char('{'),
+    .rcurly  : char('}'),
+    .uparrow : char('^'),
+    .quote   : char("'"),
+    .dquote  : char('"'),
+    .minus   : char('-'),
+    .plus    : char('+'),
+    .star    : char('*'),
+    .slash   : char('/'),
+    .perc    : char('%'),
+    .lt      : char('<'),
+    .gt      : char('>'),
+    .eq      : char('='),
+    .under   : char('_'),
+    .dot     : char('.'),
+    .bslash  : char('\\'),
+    .space   : char(' '),
+    .tab     : char('\t'),
+    .nl      : char('\n'),
+    .cr      : char('\r')
+}
+
+static fun isAlpha(c)
+    return (c >= Char.a and c <= Char.z) or (c >= Char.A and c <= Char.Z) or c == Char.under
+end
+
+static fun isNum(c)
+    return c >= Char.zero and c <= Char.nine
+end
+
+static fun isAlphaNum(c)
+    return isAlpha(c) or isNum(c)
+end
+
+static fun isHex(c)
+    return isNum(c) or (c >= Char.a and c <= Char.f)
+end
+
+// Lexer for the J* language
+// Mimicst the structure of the c lexer
+class Lexer
+    fun new(src)
+        this._src = src
+        this._ptr = 0
+        this._line = 1
+        this._tokenStart = 0
+        this._skipShabang()
+    end
+
+    fun rewindTo(tok)
+        this._ptr = this._tokenStart = tok._start
+    end
+    
+    // Returns the next token in the source file
+    fun next()
+        this._skipSpaces()
+
+        if this._isAtEnd()
+            return Token(this._src, Type.EOF, #this._src, 0)
+        end
+
+        this._tokenStart = this._ptr
+        var c = this._advance()
+
+        if   c == Char.zero and this._match(Char.x)
+            return this._hexNumber()
+        elif isNum(c) or (c == Char.dot and isNum(this._peekChar()))
+            return this._number()
+        elif isAlpha(c)
+            return this._identifier()
+        elif c == Char.lparen
+            return this._makeToken(Type.LPAREN)
+        elif c == Char.rparen
+            return this._makeToken(Type.RPAREN)
+        elif c == Char.semicol
+            return this._makeToken(Type.SEMICOLON)
+        elif c == Char.colon
+            return this._makeToken(Type.COLON)
+        elif c == Char.pipe
+            return this._makeToken(Type.PIPE)
+        elif c == Char.amper
+            return this._makeToken(Type.AMPER)
+        elif c == Char.tilde
+            return this._makeToken(Type.TILDE)
+        elif c == Char.comma
+            return this._makeToken(Type.COMMA)
+        elif c == Char.lsquare
+            return this._makeToken(Type.LSQUARE)
+        elif c == Char.rsquare
+            return this._makeToken(Type.RSQUARE)
+        elif c == Char.lcurly
+            return this._makeToken(Type.LCURLY)
+        elif c == Char.rcurly
+            return this._makeToken(Type.RCURLY)
+        elif c == Char.uparrow
+            return this._makeToken(Type.POW)
+        elif c == Char.dquote or c == Char.quote
+            return this._string(c)
+        elif c == Char.dot
+            if this._peekChar() == Char.dot and this._peekChar2() == Char.dot
+                this._advance()
+                this._advance()
+                return this._makeToken(Type.VARARG)
+            else
+                return this._makeToken(Type.DOT)
+            end
+        elif c == Char.minus
+            if this._match(Char.eq)
+                return this._makeToken(Type.MINUS_EQ)
+            else
+                return this._makeToken(Type.MINUS)
+            end
+        elif c == Char.plus
+            if this._match(Char.eq)
+                return this._makeToken(Type.PLUS_EQ)
+            else
+                return this._makeToken(Type.PLUS)
+            end
+        elif c == Char.slash
+            if this._match(Char.eq)
+                return this._makeToken(Type.DIV_EQ)
+            else
+                return this._makeToken(Type.DIV)
+            end
+        elif c == Char.star
+            if this._match(Char.eq)
+                return this._makeToken(Type.MULT_EQ)
+            else
+                return this._makeToken(Type.MULT)
+            end
+        elif c == Char.perc
+            if this._match(Char.eq)
+                return this._makeToken(Type.MOD_EQ)
+            else
+                return this._makeToken(Type.MOD)
+            end
+        elif c == Char.bang
+            if this._match(Char.eq)
+                return this._makeToken(Type.BANG_EQ)
+            else
+                return this._makeToken(Type.BANG)
+            end
+        elif c == Char.eq
+            if this._match(Char.eq)
+                return this._makeToken(Type.EQUAL_EQUAL)
+            elif this._match(Char.gt)
+                return this._makeToken(Type.ARROW)
+            else
+                return this._makeToken(Type.EQUAL)
+            end
+        elif c == Char.lt
+            if this._match(Char.eq)
+                return this._makeToken(Type.LE)
+            elif this._match(Char.lt)
+                return this._makeToken(Type.LSHIFT)
+            else
+                return this._makeToken(Type.LT)
+            end
+        elif c == Char.gt
+            if this._match(Char.eq)
+                return this._makeToken(Type.GE)
+            elif this._match(Char.gt)
+                return this._makeToken(Type.RSHIFT)
+            else
+                return this._makeToken(Type.GT)
+            end
+        elif c == Char.hash
+            if this._match(Char.hash)
+                return this._makeToken(Type.HASH_HASH)
+            else
+                return this._makeToken(Type.HASH)
+            end
+        elif c == Char.nl
+            var newLine = this._makeToken(Type.NEWLINE)
+            this._line += 1
+            return newLine
+        else
+            return this._makeToken(Type.ERR)
+        end
+    end
+
+    fun _integer()
+        while isNum(this._peekChar())
+            this._advance()
+        end
+    end
+
+    fun _number()
+        this._integer()
+        
+        if this._peekChar() == Char.dot and isNum(this._peekChar2())
+            this._advance()
+            this._integer()
+        end
+
+        if this._match(Char.e)
+            var c = this._peekChar()
+            if c == Char.minus and c == Char.plus
+                this._advance()
+            end
+            this._integer()
+        end
+
+        return this._makeToken(Type.NUMBER)
+    end
+
+    fun _hexNumber()
+        while isHex(this._peekChar())
+            this._advance()
+        end
+
+        if this._match(Char.e)
+            var c = this._peekChar()
+            if c == Char.minus and c == Char.plus 
+                this._advance()
+            end
+            this._integer()
+        end
+
+        return this._makeToken(Type.NUMBER)
+    end
+
+    fun _identifier()
+        while isAlphaNum(this._peekChar())
+            this._advance()
+        end
+
+        var tok = this._makeToken(Type.IDENTIFIER)
+        var lexeme = tok.getLexeme()
+
+        if KEYWORDS.contains(lexeme)
+            tok.type = KEYWORDS[lexeme]
+        end
+
+        return tok
+    end
+
+    fun _stringBody(endChar)
+        while this._peekChar() != endChar and !this._isAtEnd()
+            if this._peekChar() == Char.nl this._line += 1 end
+            if this._peekChar() == Char.bslash and this._peekChar2() != Char.nul
+                this._advance()
+            end
+            this._advance()
+        end
+
+        if this._isAtEnd()
+            return false
+        end
+
+        this._advance()
+        return true
+    end
+
+    fun _string(endChar)
+        if this._stringBody(endChar)
+            return this._makeToken(Type.STRING)
+        else
+            return this._makeToken(Type.UNTERMINATED_STR)
+        end 
+    end
+
+    fun _skipSpaces()
+        while !this._isAtEnd()
+            var c = this._peekChar()
+            var c2 = this._peekChar2()
+
+            if c == Char.space or c == Char.tab or c == Char.cr
+                this._advance()
+            elif c == Char.bslash and c2 == Char.nl
+                this._line += 1
+                this._advance()
+                this._advance()
+            elif c == Char.slash and c2 == Char.slash
+                while !this._isAtEnd() and this._peekChar() != Char.nl
+                    this._advance()
+                end
+            else
+                break
+            end
+        end
+    end
+
+    fun _skipShabang()
+        if this._peekChar() == Char.hash and this._peekChar2() == Char.bang
+            while this._peekChar() != Char.nl and !this._isAtEnd()
+                this._advance()
+            end
+        end
+    end
+
+    fun _match(c)
+        if !this._isAtEnd() and this._peekChar() == c
+            this._advance()
+            return true
+        end
+        return false
+    end
+
+    fun _advance()
+        if !this._isAtEnd()
+            var c = this._src.charAt(this._ptr)
+            this._ptr += 1
+            return c
+        end
+        return Char.nul
+    end
+
+    fun _peekChar()
+        var idx = this._ptr
+        return this._src.charAt(idx) if idx < #this._src else Char.nul
+    end
+
+    fun _peekChar2()
+        var idx = this._ptr + 1
+        return this._src.charAt(idx) if idx < #this._src else Char.nul
+    end
+
+    fun _isAtEnd()
+        return this._ptr >= #this._src
+    end
+
+    fun _makeToken(type)
+        return Token(this._src, type, this._tokenStart, this._ptr - this._tokenStart)
+    end
+
+    fun __iter__(_)
+        var tok = this.next()
+        return tok if tok.type != Type.EOF else false
+    end
+
+    fun __next__(tok)
+        return tok
+    end
+end

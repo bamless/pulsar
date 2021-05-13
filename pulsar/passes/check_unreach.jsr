@@ -96,17 +96,15 @@ class UnreachableCodeChecker is PassVisitor
         return true
     end
 
-    fun visitBreak(brk)
+    fun visitBreak(_)
         if !this._inLoop()
-            this._error("Cannot use break outside of a loop", brk.token)
             return false
         end
         return true
     end
 
-    fun visitContinue(cont)
+    fun visitContinue(_)
         if !this._inLoop()
-            this._error("Cannot use continue outside of a loop", cont.token)
             return false
         end
         return true

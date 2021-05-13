@@ -2,8 +2,8 @@ import parse.source as source
 import parse.parser for Parser
 
 import pulsar.passes.check_return for ReturnChecker
+import pulsar.passes.check_semantics for SemanticChecker
 import pulsar.passes.check_unused for UnusedChecker
-import pulsar.passes.check_unpack for UnpackChecker
 import pulsar.passes.check_unreach for UnreachableCodeChecker
 import pulsar.passes.resolve_var for VariableResolver
 import pulsar.errors for CliReporter
@@ -21,15 +21,15 @@ class Pulsar
             var ast = parser.parse()
             if !ast return end
 
+            var semanticChecker = SemanticChecker(this._reporter)
             var varResolver = VariableResolver(this._reporter)
             var unusedChecker = UnusedChecker(this._reporter)
-            var unpackChecker = UnpackChecker(this._reporter)
             var returnChecker = ReturnChecker(this._reporter)
             var unreachChecker = UnreachableCodeChecker(this._reporter)
             
+            ast.accept(semanticChecker)
             ast.accept(varResolver)
             ast.accept(unusedChecker)
-            ast.accept(unpackChecker)
             ast.accept(returnChecker)
             ast.accept(unreachChecker)
         ensure

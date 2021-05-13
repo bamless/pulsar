@@ -85,11 +85,6 @@ class ReturnChecker is PassVisitor
     end
 
     fun visitReturn(returnStmt)
-        if this._inMainScope()
-            this._error("Cannot use return outside of a function", returnStmt.returnTok)
-            return false
-        end
-
         if !returnStmt.expr
             return false
         end

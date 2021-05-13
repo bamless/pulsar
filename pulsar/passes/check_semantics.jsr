@@ -1,0 +1,123 @@
+import parse.ast as ast
+
+import pulsar.passes.pass_visitor for PassVisitor
+
+static fun isConstUnpack(rvalue)
+    return rvalue is ast.TupleLit or rvalue is ast.ListLit
+end
+
+static fun isConstLiteral(expr)
+    return expr is ast.NumLit or
+           expr is ast.BoolLit or
+           expr is ast.StringLit or
+           expr is ast.NullLit
+end
+
+// Check semantic rules of J*
+// This are the same check performed by the J* runtime compiler
+// In detail it checks for:
+//   - break/continue statements outside of a loop
+//   - return statements outside of a function
+//   - illegal unpacking declarations/assignments (either unbalanced, or using an invalid type)
+class SemanticChecker is PassVisitor
+    fun new(reporter)
+        super(reporter)
+        this._funcDepth = 0
+        this._loopDepth = 0
+    end
+
+    fun visitVar(varDecl)
+        if varDecl.unpack and varDecl.init
+            this._checkUnpack(varDecl.equal, #varDecl.names, varDecl.init)
+        end
+        super(varDecl)
+    end
+
+    fun visitFunc(func)
+        this._enterFunction()
+        super(func)
+        this._exitFunction()
+    end
+
+    fun visitFuncLit(func)
+        this._enterFunction()
+        super(func)
+        this._exitFunction()
+    end
+
+    fun visitFor(forStmt)
+        this._enterLoop()
+        super(forStmt)
+        this._exitLoop()
+    end
+
+    fun visitForEach(forEach)
+        this._enterLoop()
+        super(forEach)
+        this._exitLoop()
+    end
+
+    fun visitWhile(whileStmt)
+        this._enterLoop()
+        super(whileStmt)
+        this._exitLoop()
+    end
+
+    fun visitBreak(brk)
+        if !this._inLoop()
+            this._error("Cannot use break outside of a loop", brk.token)
+        end
+    end
+
+    fun visitContinue(cont)
+        if !this._inLoop()
+            this._error("Cannot use break outside of a loop", cont.token)
+        end
+    end
+
+    fun visitReturn(returnStmt)
+        if !this._inFunction()
+            this._error("Cannot use return outside of a function", returnStmt.returnTok)
+        end
+    end
+
+    fun visitAssignment(assign)
+        if assign.l is ast.TupleLit
+            this._checkUnpack(assign.equal, #assign.l.expressions, assign.r)
+        end
+        super(assign)
+    end
+
+    fun _enterLoop()
+        this._loopDepth += 1
+    end
+
+    fun _exitLoop()
+        this._loopDepth -= 1
+    end
+
+    fun _enterFunction()
+        this._funcDepth += 1
+    end
+
+    fun _exitFunction()
+        this._funcDepth -= 1
+    end
+
+    fun _inLoop()
+        return this._loopDepth != 0
+    end
+
+    fun _inFunction()
+        return this._funcDepth != 0
+    end
+    
+    fun _checkUnpack(errTok, numUnpacks, rvalue)
+        if isConstLiteral(rvalue)
+            this._error("Right hand side of unpack must be a Tuple or a List", errTok)
+        elif isConstUnpack(rvalue) and numUnpacks > #rvalue.expressions
+            this._error("Too few values to unpack: expected {0}, got {1}" % 
+                        (numUnpacks,  #rvalue.expressions), errTok)
+        end
+    end
+end

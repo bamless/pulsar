@@ -25,7 +25,7 @@ static fun buildHelpMessage(usage, description, optDesc)
         return max(width1[0], width2[0]), max(width1[1], width2[1])
     end)
 
-    // Add options to the builder, left-jusifying each coloumn
+    // Add options to the builder, left-jusifying each coloumn to `colWidths`
     var INDENT = " " * 4
 
     var helpOption, helpDescription = optLines.removeAt(0)

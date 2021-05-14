@@ -131,7 +131,7 @@ class OptParser
         end
 
         for var opt in this._optDesc
-            if result.contains(opt.long)
+            if !result.contains(opt.long)
                 if opt.required
                     io.stderr.writeln("error: option `{0}, {1}` is mandatory" %
                                       (opt.short, opt.long))

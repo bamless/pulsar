@@ -100,14 +100,14 @@ class OptParser
                 break
             end
 
-            if name == "-h" or name == "--help"
-                this.printHelp()
-                sys.exit(0)
-            end
-
             if !name.startsWith("--")
                 argStack.addAll(name[2, #name].reversed().map(|flag| => "-" + flag))
                 name = name[0, 2]
+            end
+
+            if name == "-h" or name == "--help"
+                this.printHelp()
+                sys.exit(0)
             end
 
             var option = this._optMap[name]

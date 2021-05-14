@@ -28,7 +28,7 @@ fun run(args)
 
             reporter.clearErrors()
         except io.IOException e
-            io.stderr.writeln("Error: {0}" % e.err())
+            io.stderr.writeln("Error {0}: {1}\n" % (path, e.err()))
         end
     end
 end

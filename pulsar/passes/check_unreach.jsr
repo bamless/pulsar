@@ -79,7 +79,7 @@ class UnreachableCodeChecker is PassVisitor
 
         var ensureInterrupts = false 
         if tryStmt.ensureBlock
-            ensureInterrupts= tryStmt.ensureBlock.accept(this)
+            ensureInterrupts = tryStmt.ensureBlock.accept(this)
         end
 
         return (tryInterrupts or ensureInterrupts)

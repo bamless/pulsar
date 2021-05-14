@@ -5,7 +5,7 @@ import pulsar.opt_parse as opt_parse
 import pulsar.pulsar for Pulsar
 
 fun run(args)
-    var parser = opt_parse.OptParser("pulsar [options] [files...]",  "A static analyzer for the J* language", [
+    var parser = opt_parse.OptParser("pulsar [options] [files...]", "A static analyzer for the J* language", [
         opt_parse.Option("no-unreachable", "U", opt_parse.FLAG, "Disable unreachable code pass"),
         opt_parse.Option("no-unused", "u", opt_parse.FLAG, "Disable unused variable pass"),
         opt_parse.Option("no-check-returns", "r", opt_parse.FLAG, "Disable return checking pass"),
@@ -25,7 +25,7 @@ fun run(args)
             
             reporter.printErrors()
             print("File {0}: {1} errors\n" % (path, reporter.numErrors()))
-            
+
             reporter.clearErrors()
         except io.IOException e
             io.stderr.writeln("Error: {0}" % e.err())

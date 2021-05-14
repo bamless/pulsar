@@ -608,7 +608,6 @@ class TupleLit is Expr
     end
 
     fun representativeToken()
-        // TODO: store leftBracket and rightBracket in case of empty tuple
         return this.expressions[0] if #this.expression != 0 else this.leftBracket
     end
 end

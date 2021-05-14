@@ -2,4 +2,4 @@
 
 import pulsar
 
-pulsar.run(argv)
+pulsar.main(argv)

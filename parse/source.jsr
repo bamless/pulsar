@@ -1,12 +1,21 @@
-import re
 import io
+import re
+
+// Returns a list with the offsets of all newlines in the source
+static fun getLines(string)
+    var lines = re.gmatch(string, '()\n')
+    // Add syntethic newlines at the start and at the end
+    lines.insert(0, 0)
+    lines.insert(#lines, #string)
+    return lines
+end
 
 // Class that represent a single J* source file
 class SourceFile
     fun new(path, src)
         this.path = path
         this._src = src
-        this._lines = this._getLines()
+        this._lines = getLines(src)
     end
 
     // Retuns the based-1 line number on which the byte at off belongs
@@ -42,15 +51,6 @@ class SourceFile
     // @arg index integer or slice to get the underlying source code
     fun __get__(idx)
         return this._src[idx]
-    end
-
-    // Get the bytes' offsets of all newlines in the source
-    fun _getLines()
-        var lines = re.gmatch(this._src, '()\n')
-        // Add syntethic newlines at the start and at the end
-        lines.insert(0, 0)
-        lines.insert(#lines, #this._src)
-        return lines
     end
 
     fun charAt(i)

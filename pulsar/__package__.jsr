@@ -25,7 +25,6 @@ fun run(args)
             
             reporter.printErrors()
             print("File {0}: {1} errors\n" % (path, reporter.numErrors()))
-
             reporter.clearErrors()
         except io.IOException e
             io.stderr.writeln("Error: {0}" % e.err())

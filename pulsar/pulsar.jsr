@@ -8,46 +8,36 @@ import pulsar.passes.check_unreach for UnreachableCodeChecker
 import pulsar.passes.resolve_var for VariableResolver
 
 class Pulsar
-    fun new(reporter, opts)
+    fun new(opts)
         this._opts = opts
-        this._reporter = reporter
     end
 
-    fun analyzeFile(path)
-        try
-            this._reporter.startAnalysis(path)
+    fun analyzeFile(path, reporter)
+        var parser = Parser(source.fromFile(path), reporter.reportError)
+        var ast = parser.parse()
+        if !ast return end
 
-            var parser = Parser(source.fromFile(path), this._reporter.reportError)
-            var ast = parser.parse()
-            
-            if !ast
-                return
-            end
+        var opts = this._opts
 
-            var opts = this._opts
+        // Semantic checker always executed
+        var semanticChecker = SemanticChecker(reporter)
+        ast.accept(semanticChecker)
 
-            // Semantic checker always executed
-            var semanticChecker = SemanticChecker(this._reporter)
-            ast.accept(semanticChecker)
-
-            if !opts["no-resolve"]
-                var varResolver = VariableResolver(this._reporter)
-                ast.accept(varResolver)
-            end
-            if !opts["no-unused"]
-                var unusedChecker = UnusedChecker(this._reporter)
-                ast.accept(unusedChecker)
-            end
-            if !opts["no-check-retunrs"]
-                var returnChecker = ReturnChecker(this._reporter)
-                ast.accept(returnChecker)
-            end
-            if !opts["no-unreachable"]
-                var unreachChecker = UnreachableCodeChecker(this._reporter)
-                ast.accept(unreachChecker)
-            end
-        ensure
-            this._reporter.endAnalysis()
+        if !opts["no-resolve"]
+            var varResolver = VariableResolver(reporter)
+            ast.accept(varResolver)
+        end
+        if !opts["no-unused"]
+            var unusedChecker = UnusedChecker(reporter)
+            ast.accept(unusedChecker)
+        end
+        if !opts["no-check-retunrs"]
+            var returnChecker = ReturnChecker(reporter)
+            ast.accept(returnChecker)
+        end
+        if !opts["no-unreachable"]
+            var unreachChecker = UnreachableCodeChecker(reporter)
+            ast.accept(unreachChecker)
         end
     end
 end

@@ -1,10 +1,12 @@
 import io
-import sys
 import math for max
+import sys
 
 static fun justify(string, justification)
     return string + " " * (justification - #string)
 end
+
+static var INDENT = " " * 4
 
 static fun buildHelpMessage(usage, description, optDesc)
     var helpBuilder = ["Usage: ", usage, "\n", description, "\n\n"]
@@ -21,18 +23,14 @@ static fun buildHelpMessage(usage, description, optDesc)
     end
 
     // Calculate the max coloumn width
-    var colWidths = optLines.map(|line| => (#line[0], #line[1])).reduce((0, 0), fun(width1, width2)
-        return max(width1[0], width2[0]), max(width1[1], width2[1])
-    end)
+    var colWidth = optLines.map(|ln| => #ln[0]).reduce(0, |width1, width2| => max(width1, width2))
 
-    // Add options to the builder, left-jusifying each coloumn to `colWidths`
-    var INDENT = " " * 4
-
+    // Add options to the builder, left-jusifying the second coloumn to `colWidth`
     var helpOption, helpDescription = optLines.removeAt(0)
     helpBuilder.add(INDENT)
-    helpBuilder.add(justify(helpOption, colWidths[0]))
+    helpBuilder.add(justify(helpOption, colWidth))
     helpBuilder.add("  ")
-    helpBuilder.add(justify(helpDescription, colWidths[1]))
+    helpBuilder.add(helpDescription)
     helpBuilder.add("\n\n")
 
     helpBuilder.add("Options")
@@ -40,9 +38,9 @@ static fun buildHelpMessage(usage, description, optDesc)
         var option, description = line
         helpBuilder.add("\n")
         helpBuilder.add(INDENT)
-        helpBuilder.add(justify(option, colWidths[0]))
+        helpBuilder.add(justify(option, colWidth))
         helpBuilder.add("  ")
-        helpBuilder.add(justify(description, colWidths[1]))
+        helpBuilder.add(description)
     end
 
     return helpBuilder.join()
@@ -91,14 +89,25 @@ class OptParser
         var argStack = args.reversed().collect(List)
         while #argStack > 0
             var name = argStack.pop()
-            if !name.startsWith("-")
+
+            if !name.startsWith("-") or #name <= 1
                 nonOpts.add(name)
                 continue
+            end
+
+            if name == "--"
+                nonOpts.addAll(argStack.reversed())
+                break
             end
 
             if name == "-h" or name == "--help"
                 this.printHelp()
                 sys.exit(0)
+            end
+
+            if !name.startsWith("--") and #name > 2
+                argStack.addAll(name[2, #name].reversed().map(|flag| => "-" + flag))
+                name = name[0, 2]
             end
 
             var option = this._optMap[name]
@@ -122,7 +131,7 @@ class OptParser
         end
 
         for var opt in this._optDesc
-            if result[opt.long] == null
+            if result.contains(opt.long)
                 if opt.required
                     io.stderr.writeln("error: option `{0}, {1}` is mandatory" %
                                       (opt.short, opt.long))

@@ -14,14 +14,21 @@ fun run(args)
 
     var opts, files = parser.parse(args)
 
-    var pulsar = Pulsar(CliReporter(), opts)
+    var pulsar = Pulsar(opts)
+    var reporter = CliReporter()
 
     for var path in files
         try
             print("Analyzing {0}..." % path)
-            pulsar.analyzeFile(path)
+
+            pulsar.analyzeFile(path, reporter)
+            
+            reporter.printErrors()
+            print("File {0}: {1} errors\n" % (path, reporter.numErrors()))
+
+            reporter.clearErrors()
         except io.IOException e
-            io.stderr.writeln("[Error] {0}" % e.err())
+            io.stderr.writeln("Error: {0}" % e.err())
         end
     end
 end

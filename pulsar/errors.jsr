@@ -1,21 +1,30 @@
 import io
 
 class ErrorReporter
-    fun startAnalysis(path_)
-        raise NotImplementedException()
+    fun new()
+        this._numErrors = 0
     end
 
     fun reportError(msg_, tok_)
+        this._numErrors += 1
+    end
+
+    fun startAnalysis(path_)
         raise NotImplementedException()
     end
 
     fun endAnalysis()
         raise NotImplementedException()
     end
+
+    fun numErrors()
+        return this._numErrors
+    end
 end
 
 class CliReporter is ErrorReporter
     fun new()
+        super()
         this._errors = []
     end
 
@@ -25,6 +34,8 @@ class CliReporter is ErrorReporter
     end
 
     fun reportError(message, token)
+        super(message, token)
+        
         var src = token.getSource()
         var line = token.line()
 

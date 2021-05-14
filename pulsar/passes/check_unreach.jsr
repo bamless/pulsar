@@ -16,7 +16,6 @@ class UnreachableCodeChecker is PassVisitor
                     this._error("Unreachable statement. Previous statement breaks control unconditionally", 
                                 block.statements[n + 1].representativeToken())
                 end
-
                 // Propragate interruption of control flow
                 return true
             end

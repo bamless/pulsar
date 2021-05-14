@@ -1,0 +1,163 @@
+import io
+import sys
+import math for max
+
+static fun justify(string, justification)
+    return string + " " * (justification - #string)
+end
+
+static fun buildHelpMessage(usage, description, optDesc)
+    var helpBuilder = ["Usage: ", usage, "\n", description, "\n\n"]
+
+    // Stringify options along with their description
+    var optLines = [("-h, --help", "Show this help message and exit")]
+    for var opt in optDesc
+        var option = "-{0}, --{1}" % (opt.short, opt.long)
+        if opt.args > 0
+            option += " " + List(opt.args, |i| => ascii(char("a") + i)).join(", ")
+        end 
+        var description = opt.description
+        optLines.add((option, description))
+    end
+
+    // Calculate the max coloumn width
+    var colWidths = optLines.map(|line| => (#line[0], #line[1])).reduce((0, 0), fun(width1, width2)
+        return max(width1[0], width2[0]), max(width1[1], width2[1])
+    end)
+
+    // Add options to the builder, left-jusifying each coloumn
+    var INDENT = " " * 4
+
+    var helpOption, helpDescription = optLines.removeAt(0)
+    helpBuilder.add(INDENT)
+    helpBuilder.add(justify(helpOption, colWidths[0]))
+    helpBuilder.add("  ")
+    helpBuilder.add(justify(helpDescription, colWidths[1]))
+    helpBuilder.add("\n\n")
+
+    helpBuilder.add("Options")
+    for var line in optLines
+        var option, description = line
+        helpBuilder.add("\n")
+        helpBuilder.add(INDENT)
+        helpBuilder.add(justify(option, colWidths[0]))
+        helpBuilder.add("  ")
+        helpBuilder.add(justify(description, colWidths[1]))
+    end
+
+    return helpBuilder.join()
+end
+
+static fun processOptDesc(optDesc)
+    var optMap = {}
+    for var opt in optDesc
+        var short = "-" + opt.short
+        var long = "--" + opt.long
+        if optMap.contains(short)
+            raise InvalidArgException("Duplicate short option '{0}'" % opt.short)
+        end
+        if optMap.contains(long)
+            raise InvalidArgException("Duplicate long option '{0}'" % opt.long)
+        end
+        optMap[short] = opt
+        optMap[long] = opt
+    end
+    return optMap
+end
+
+static fun popn(stack, num)
+    if num == 1
+        return stack.pop()
+    end
+    
+    var res = List(num)
+    for var i = 0; i < num; i += 1
+        res[i] = stack.pop()
+    end
+    
+    return Tuple(res)
+end
+
+class OptParser
+    fun new(usage, description, optDesc)
+        this._optDesc = optDesc
+        this._optMap = processOptDesc(optDesc)
+        this._helpMsg = buildHelpMessage(usage, description, optDesc)
+    end
+
+    fun parse(args)
+        var result, nonOpts = {}, []
+
+        var argStack = args.reversed().collect(List)
+        while #argStack > 0
+            var name = argStack.pop()
+            if !name.startsWith("-")
+                nonOpts.add(name)
+                continue
+            end
+
+            if name == "-h" or name == "--help"
+                this.printHelp()
+                sys.exit(0)
+            end
+
+            var option = this._optMap[name]
+            if !option
+                io.stderr.writeln("error: unknown option `{0}`" % name)
+                this.printHelp()
+                sys.exit(-1)
+            end
+
+            if option.args != FLAG
+                if #argStack < option.args
+                    io.stderr.writeln("error: option `{0}` requires {1} arguments" % 
+                                      (name, option.args))
+                    this.printHelp()
+                    sys.exit(-1)
+                end
+                result[option.long] = popn(argStack, option.args)
+            else
+                result[option.long] = true
+            end
+        end
+
+        for var opt in this._optDesc
+            if result[opt.long] == null
+                if opt.required
+                    io.stderr.writeln("error: option `{0}, {1}` is mandatory" %
+                                      (opt.short, opt.long))
+                    this.printHelp()
+                    sys.exit(-1)
+                elif opt.default != null
+                    result[opt.long] = opt.default
+                end
+            end
+        end
+
+        return result, nonOpts
+    end
+
+    fun printHelp()
+        io.stdout.writeln(this._helpMsg)
+    end
+end
+
+var FLAG = 0
+
+class Option
+    fun new(long, short, args, description, default=null, required=false)
+        assert(#long > 1, "Long option must have length greater than one", InvalidArgException)
+        assert(#short == 1, "Short option must have length equal to one", InvalidArgException)
+        assert(!required or default, "Required argument {0} cannot have default value" % long,
+               InvalidArgException)
+        assert(args != FLAG or default == null, "flag option '{0}' cannot have default value" %
+               long, InvalidArgException)
+
+        this.long = long
+        this.short = short
+        this.args = args
+        this.description = description
+        this.default = default
+        this.required = required
+    end
+end

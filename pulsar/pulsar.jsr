@@ -6,11 +6,11 @@ import pulsar.passes.check_semantics for SemanticChecker
 import pulsar.passes.check_unused for UnusedChecker
 import pulsar.passes.check_unreach for UnreachableCodeChecker
 import pulsar.passes.resolve_var for VariableResolver
-import pulsar.errors for CliReporter
 
 class Pulsar
-    fun new(reporter=null)
-        this._reporter = reporter or CliReporter()
+    fun new(reporter, opts)
+        this._opts = opts
+        this._reporter = reporter
     end
 
     fun analyzeFile(path)
@@ -19,19 +19,33 @@ class Pulsar
 
             var parser = Parser(source.fromFile(path), this._reporter.reportError)
             var ast = parser.parse()
-            if !ast return end
-
-            var semanticChecker = SemanticChecker(this._reporter)
-            var varResolver = VariableResolver(this._reporter)
-            var unusedChecker = UnusedChecker(this._reporter)
-            var returnChecker = ReturnChecker(this._reporter)
-            var unreachChecker = UnreachableCodeChecker(this._reporter)
             
+            if !ast
+                return
+            end
+
+            var opts = this._opts
+
+            // Semantic checker always executed
+            var semanticChecker = SemanticChecker(this._reporter)
             ast.accept(semanticChecker)
-            ast.accept(varResolver)
-            ast.accept(unusedChecker)
-            ast.accept(returnChecker)
-            ast.accept(unreachChecker)
+
+            if !opts["no-resolve"]
+                var varResolver = VariableResolver(this._reporter)
+                ast.accept(varResolver)
+            end
+            if !opts["no-unused"]
+                var unusedChecker = UnusedChecker(this._reporter)
+                ast.accept(unusedChecker)
+            end
+            if !opts["no-check-retunrs"]
+                var returnChecker = ReturnChecker(this._reporter)
+                ast.accept(returnChecker)
+            end
+            if !opts["no-unreachable"]
+                var unreachChecker = UnreachableCodeChecker(this._reporter)
+                ast.accept(unreachChecker)
+            end
         ensure
             this._reporter.endAnalysis()
         end

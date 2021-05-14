@@ -2,7 +2,7 @@ import io
 import math for max
 import sys
 
-static fun justify(string, justification)
+static fun leftJustify(string, justification)
     return string + " " * (justification - #string)
 end
 
@@ -23,12 +23,12 @@ static fun buildHelpMessage(usage, description, optDesc)
     end
 
     // Calculate the max coloumn width
-    var colWidth = optLines.map(|ln| => #ln[0]).reduce(0, |width1, width2| => max(width1, width2))
+    var colWidth = optLines.map(|ln| => #ln[0]).reduce(0, |w1, w2| => max(w1, w2))
 
     // Add options to the builder, left-jusifying the second coloumn to `colWidth`
     var helpOption, helpDescription = optLines.removeAt(0)
     helpBuilder.add(INDENT)
-    helpBuilder.add(justify(helpOption, colWidth))
+    helpBuilder.add(leftJustify(helpOption, colWidth))
     helpBuilder.add("  ")
     helpBuilder.add(helpDescription)
     helpBuilder.add("\n\n")
@@ -38,7 +38,7 @@ static fun buildHelpMessage(usage, description, optDesc)
         var option, description = line
         helpBuilder.add("\n")
         helpBuilder.add(INDENT)
-        helpBuilder.add(justify(option, colWidth))
+        helpBuilder.add(leftJustify(option, colWidth))
         helpBuilder.add("  ")
         helpBuilder.add(description)
     end
@@ -84,9 +84,9 @@ class OptParser
     end
 
     fun parse(args)
+        var argStack = args.reversed().collect(List)
         var result, nonOpts = {}, []
 
-        var argStack = args.reversed().collect(List)
         while #argStack > 0
             var name = argStack.pop()
 

@@ -105,7 +105,7 @@ class OptParser
                 sys.exit(0)
             end
 
-            if !name.startsWith("--") and #name > 2
+            if !name.startsWith("--")
                 argStack.addAll(name[2, #name].reversed().map(|flag| => "-" + flag))
                 name = name[0, 2]
             end

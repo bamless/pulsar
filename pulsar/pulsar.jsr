@@ -31,7 +31,7 @@ class Pulsar
             var unusedChecker = UnusedChecker(reporter, opts["no-unused-args"])
             ast.accept(unusedChecker)
         end
-        if !opts["no-check-retunrs"]
+        if !opts["no-check-returns"]
             var returnChecker = ReturnChecker(reporter)
             ast.accept(returnChecker)
         end

@@ -1,7 +1,7 @@
 import io
 import re
 
-// Returns a list with the offsets of all newlines in the source
+// Returns a list with the offsets of all newlines in the string
 static fun getLines(string)
     var lines = re.gmatch(string, '()\n')
     // Add syntethic newlines at the start and at the end

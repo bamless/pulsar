@@ -37,8 +37,9 @@ end
 // Additionally, it detects and reports some common errors, such as use before declaration of
 // static globals and possibly uninitialized variables
 class VariableResolver is PassVisitor
-    fun new(reporter)
+    fun new(reporter, ignoreGlobalRedefinition=false)
         super(reporter)
+        this._ignoreGlobalRedefinition = ignoreGlobalRedefinition
         this._variables = SymbolTable()
         this._initialized = SymbolTable()
         this._functionDepth = 0
@@ -345,7 +346,7 @@ class VariableResolver is PassVisitor
         var prevDecl = this._variables.lookupAt(token.getLexeme(), -1)
         if !prevDecl
             return this._defineName(token.getLexeme(), token.line(), this._getCurScope(), init)
-        else
+        elif !(this._inGlobalScope() and this._ignoreGlobalRedefinition)
             this._error("Variable '{0}' already declared, previous declaration at line {1}" %
                         (prevDecl.name, prevDecl.line), token)
             return null
@@ -390,6 +391,10 @@ class VariableResolver is PassVisitor
 
     fun _inMainScope()
         return this._functionDepth == 0
+    end
+
+    fun _inGlobalScope()
+        return #this._variables == 1
     end
 
     fun _getCurScope()

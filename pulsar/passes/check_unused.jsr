@@ -8,8 +8,9 @@ import pulsar.symtable for SymbolTable
 static var IGNORE_SUFFIX = "_"
 
 class UnusedChecker is PassVisitor
-    fun new(reporter)
+    fun new(reporter, ignoreUnusedArg=false)
         super(reporter)
+        this._ignoreUnusedArg = ignoreUnusedArg
         this._variables = SymbolTable()
     end
 
@@ -34,6 +35,9 @@ class UnusedChecker is PassVisitor
 
         for var arg in func.arguments
             this._define(arg)
+            if this._ignoreUnusedArg
+                this._setUsed(arg)
+            end
         end
 
         super(func)
@@ -46,6 +50,9 @@ class UnusedChecker is PassVisitor
 
         for var arg in funcLit.arguments
             this._define(arg)
+            if this._ignoreUnusedArg
+                this._setUsed(arg)
+            end
         end
 
         super(funcLit)
@@ -131,7 +138,7 @@ class UnusedChecker is PassVisitor
         if name.endsWith(IGNORE_SUFFIX)
             this._error("Name '{0}' not ignored as it ought to be" % name, varLit.id)
         end
-        this._variables.set(varLit.id, true)
+        this._setUsed(varLit.id)
     end
 
     fun _enterScope()
@@ -150,6 +157,10 @@ class UnusedChecker is PassVisitor
 
     fun _define(token)
         this._variables.insert(token, false)
+    end
+
+    fun _setUsed(token)
+        this._variables.set(token, true)
     end
 
     fun _inGlobalScope()

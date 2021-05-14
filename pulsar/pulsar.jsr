@@ -24,11 +24,11 @@ class Pulsar
         ast.accept(semanticChecker)
 
         if !opts["no-resolve"]
-            var varResolver = VariableResolver(reporter)
+            var varResolver = VariableResolver(reporter, opts["no-redefined-globals"])
             ast.accept(varResolver)
         end
         if !opts["no-unused"]
-            var unusedChecker = UnusedChecker(reporter)
+            var unusedChecker = UnusedChecker(reporter, opts["no-unused-args"])
             ast.accept(unusedChecker)
         end
         if !opts["no-check-retunrs"]

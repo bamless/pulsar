@@ -6,10 +6,12 @@ import pulsar.pulsar for Pulsar
 
 fun main(args)
     var parser = opt_parse.OptParser("pulsar [options] [files...]", "A static analyzer for the J* language", [
+        opt_parse.Option("no-resolve", "v", opt_parse.FLAG, "Disable variable resolution pass"),
+        opt_parse.Option("no-redefined-globals", "R", opt_parse.FLAG, "Ignore redefined global variables"),
         opt_parse.Option("no-unreachable", "U", opt_parse.FLAG, "Disable unreachable code pass"),
+        opt_parse.Option("no-unused-args", "a", opt_parse.FLAG, "Ignore errors unused function arguments"),
         opt_parse.Option("no-unused", "u", opt_parse.FLAG, "Disable unused variable pass"),
         opt_parse.Option("no-check-returns", "r", opt_parse.FLAG, "Disable return checking pass"),
-        opt_parse.Option("no-resolve", "v", opt_parse.FLAG, "Disable variable resolution pass"),
     ])
 
     var opts, files = parser.parse(args)

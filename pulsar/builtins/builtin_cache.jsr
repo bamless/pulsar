@@ -3,7 +3,7 @@ import io
 import parse.parser for Parser
 import parse.source as source
 
-static var BUILTIN_NAMES   = ["core.jsr", "debug.jsr", "io.jsr", "math.jsr", "re.jsr", "sys.jsr"]
+static var BUILTIN_NAMES   = ["core.jsr"] //, "debug.jsr", "io.jsr", "math.jsr", "re.jsr", "sys.jsr"]
 static var BUILTIN_STORAGE = "pulsar/builtins"
 
 static var builtinCache   = {}

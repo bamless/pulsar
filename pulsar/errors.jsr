@@ -22,23 +22,26 @@ class CliReporter is ErrorReporter
 
     fun reportError(message, token)
         super(message, token)
-        
-        var src = token.getSource()
-        var line = token.line()
 
+        var lineStart = token.line()
         var colStart = token.coloumn() - 1
         var colEnd = token.coloumnEnd() - 1
+        
+        var src = token.getSource()
+        var line = src.getLine(lineStart)
 
-        var errorBuilder = ["File {0} [line {1}]:\n" % (src.path, line)]
-        errorBuilder.add(src.getLine(line))
+        var errorBuilder = ["File {0} [line {1}]:\n" % (src.path, lineStart)]
+        errorBuilder.add(line)
         errorBuilder.add("\n")
-        errorBuilder.add(" " * colStart)
+        for var i = 0; i < colStart; i += 1
+            errorBuilder.add("\t" if line.charAt(i) == char("\t") else " ")
+        end
         errorBuilder.add("^")
         errorBuilder.add("~" * (colEnd - colStart - 1))
         errorBuilder.add("\n")
         errorBuilder.add(message)
 
-        this._errors.add((line, errorBuilder.join()))
+        this._errors.add((lineStart, errorBuilder.join()))
     end
 
     fun printErrors()

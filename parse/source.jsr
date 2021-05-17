@@ -4,8 +4,8 @@ import re
 // Returns a list with the offsets of all newlines in the string
 static fun getLines(string)
     var lines = re.gmatch(string, '()\n')
-    // Add syntethic newlines at the start and at the end
-    lines.insert(0, 0)
+    // Add syntethic newlines before the start and the end
+    lines.insert(0, -1)
     lines.insert(#lines, #string)
     return lines
 end
@@ -37,14 +37,13 @@ class SourceFile
     // @arg off the offset of the byte
     fun coloumnAt(off)
         var line = this.lineAt(off) - 1
-        var col = off - this._lines[line]
-        return col if line != 0 else col + 1
+        return off - this._lines[line]
     end
 
     // Returns a line of the source file
     // @arg n the line number
     fun getLine(n)
-        return this._src[this._lines[n - 1], this._lines[n]]
+        return this._src[this._lines[n - 1] + 1, this._lines[n]]
     end
 
     // Index the source code. Use the slice syntax [a, b] to get a portion of the code.

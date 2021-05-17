@@ -23,11 +23,11 @@ class BufferedReporter is ErrorReporter
         this._errors.add((message, token))
     end
 
-    fun formatError(message, token)
+    fun formatError(message_, token_)
         raise NotImplementedException()
     end
 
-    fun outputError(error)
+    fun outputError(error_)
         raise NotImplementedException()
     end
 

@@ -6,7 +6,7 @@ import parse.source as source
 static var BUILTIN_NAMES   = ["core.jsr"] //, "debug.jsr", "io.jsr", "math.jsr", "re.jsr", "sys.jsr"]
 static var BUILTIN_STORAGE = "pulsar/builtins"
 
-static var builtinCache   = {}
+static var builtinCache = {}
 
 fun getBuiltinModule(name)
     return builtinCache[name]
@@ -30,14 +30,13 @@ end
 
 for var moduleName in BUILTIN_NAMES
     var storageName = moduleName + ".bltin"
-    var cached = cacheBuiltin(moduleName, "{0}/{1}" % (BUILTIN_STORAGE, storageName))
 
+    var cached = cacheBuiltin(moduleName, "{0}/{1}" % (BUILTIN_STORAGE, storageName))
     if !cached
         for var path in importPaths
             cached = cacheBuiltin(moduleName, "{0}/{1}/{2}" % (path, BUILTIN_STORAGE, storageName))
             if cached break end
         end
     end
-
     assert(cached, "Cannot cache builtin module `{0}`" % moduleName)
 end

@@ -2,11 +2,11 @@ import io
 import math for max
 import sys
 
+static var INDENT = " " * 4
+
 static fun leftJustify(string, justification)
     return string + " " * (justification - #string)
 end
-
-static var INDENT = " " * 4
 
 static fun buildHelpMessage(usage, description, optDesc)
     var helpBuilder = ["Usage: ", usage, "\n", description, "\n\n"]
@@ -73,7 +73,7 @@ static fun popn(stack, num)
         res[i] = stack.pop()
     end
     
-    return Tuple(res)
+    return res
 end
 
 class OptParser
@@ -88,31 +88,31 @@ class OptParser
         var result, nonOpts = {}, []
 
         while #argStack > 0
-            var name = argStack.pop()
+            var arg = argStack.pop()
 
-            if !name.startsWith("-") or #name <= 1
-                nonOpts.add(name)
+            if !arg.startsWith("-") or #arg <= 1
+                nonOpts.add(arg)
                 continue
             end
 
-            if name == "--"
+            if arg == "--"
                 nonOpts.addAll(argStack.reversed())
                 break
             end
 
-            if !name.startsWith("--")
-                argStack.addAll(name[2, #name].reversed().map(|flag| => "-" + flag))
-                name = name[0, 2]
+            if !arg.startsWith("--") and #arg > 2
+                argStack.addAll(arg[2, #arg].reversed().map(|flag| => "-" + flag))
+                arg = arg[0, 2]
             end
 
-            if name == "-h" or name == "--help"
+            if arg == "-h" or arg == "--help"
                 this.printHelp()
                 sys.exit(0)
             end
 
-            var option = this._optMap[name]
+            var option = this._optMap[arg]
             if !option
-                io.stderr.writeln("error: unknown option `{0}`" % name)
+                io.stderr.writeln("error: unknown option `{0}`" % arg)
                 this.printHelp()
                 sys.exit(-1)
             end
@@ -120,7 +120,7 @@ class OptParser
             if option.args != FLAG
                 if #argStack < option.args
                     io.stderr.writeln("error: option `{0}` requires {1} arguments" % 
-                                      (name, option.args))
+                                      (arg, option.args))
                     this.printHelp()
                     sys.exit(-1)
                 end
@@ -137,7 +137,7 @@ class OptParser
                                       (opt.short, opt.long))
                     this.printHelp()
                     sys.exit(-1)
-                elif opt.default != null
+                elif opt.default
                     result[opt.long] = opt.default
                 end
             end

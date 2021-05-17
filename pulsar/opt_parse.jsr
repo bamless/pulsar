@@ -16,7 +16,7 @@ static fun buildHelpMessage(usage, description, optDesc)
     for var opt in optDesc
         var option = "-{0}, --{1}" % (opt.short, opt.long)
         if opt.args > 0
-            option += " " + List(opt.args, |i| => ascii(char("a") + i)).join(", ")
+            option += " " + opt.argNames.map(|name| => "'" + name + "'").join(", ")
         end 
         var description = opt.description
         optLines.add((option, description))
@@ -117,7 +117,7 @@ class OptParser
                 sys.exit(-1)
             end
 
-            if option.args != FLAG
+            if option.args > 0
                 if #argStack < option.args
                     io.stderr.writeln("error: option `{0}` requires {1} arguments" % 
                                       (arg, option.args))
@@ -151,22 +151,22 @@ class OptParser
     end
 end
 
-var FLAG = 0
-
 class Option
-    fun new(long, short, args, description, default=null, required=false)
+    fun new(long, short, description, args, argNames=null, default=null, required=false)
         assert(#long > 1, "Long option must have length greater than one", InvalidArgException)
         assert(#short == 1, "Short option must have length equal to one", InvalidArgException)
+        assert(args == 0 or args == #argNames, "Not enough arg names given", InvalidArgException)
         assert(!required or default, "Required argument {0} cannot have default value" % long,
                InvalidArgException)
-        assert(args != FLAG or default == null, "flag option '{0}' cannot have default value" %
+        assert(args > 0 or default == null, "Flag option '{0}' cannot have default value" %
                long, InvalidArgException)
 
         this.long = long
         this.short = short
         this.args = args
-        this.description = description
         this.default = default
+        this.argNames = argNames
         this.required = required
+        this.description = description
     end
 end

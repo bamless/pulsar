@@ -1,32 +1,81 @@
 import io
 
+// Error reporter interface
+// The various error checking passes call `reportError` every time
+// they encounter a problem
 class ErrorReporter
-    fun new()
-        this._numErrors = 0
-    end
-
-    fun reportError(msg_, tok_)
-        this._numErrors += 1
-    end
-
-    fun numErrors()
-        return this._numErrors
+    // @arg message A description of the error
+    // @arg token   Token involved in the error
+    fun reportError(message_, token_)
+        raise NotImplementedException()
     end
 end
 
-class CliReporter is ErrorReporter
+// Implementation of error reporter that buffers the errors and
+// delays the reporting until `reportErrors` is called
+// On reporting, the errors are ordered by line
+class BufferedReporter is ErrorReporter
     fun new()
-        super()
         this._errors = []
     end
 
     fun reportError(message, token)
-        super(message, token)
+        this._errors.add((message, token))
+    end
 
+    fun formatError(message, token)
+        raise NotImplementedException()
+    end
+
+    fun outputError(error)
+        raise NotImplementedException()
+    end
+
+    fun reportErrors()
+        this._errors.sort(|e1, e2| => e1[1].line() - e2[1].line())
+        for var message, token in this._errors
+            var formatted = this.formatError(message, token)
+            this.outputError(formatted)
+        end
+        this._errors.clear()
+    end
+
+    fun numErrors()
+        return #this._errors
+    end
+end
+
+// Error reporter that writes the errors to a file
+// The ownership of the file passed upon construction is taken by the class,
+// and thus it should be closed by calling the `close` method provided here
+class FileReporter is BufferedReporter
+    fun new(file)
+        super()
+        this._file = file
+    end
+
+    fun outputError(error)
+        this._file.writeln(error)
+    end
+
+    fun close()
+        if this._file != io.stderr and this._file != io.stdout
+            this._file.close()
+        end
+    end
+end
+
+// Formats errors in a humal readable form
+class PrettyReporter is FileReporter
+    fun new(file)
+        super(file)
+    end
+
+    fun formatError(message, token)
         var lineStart = token.line()
         var colStart = token.coloumn() - 1
         var colEnd = token.coloumnEnd() - 1
-        
+    
         var src = token.getSource()
         var line = src.getLine(lineStart)
 
@@ -41,17 +90,6 @@ class CliReporter is ErrorReporter
         errorBuilder.add("\n")
         errorBuilder.add(message)
 
-        this._errors.add((lineStart, errorBuilder.join()))
-    end
-
-    fun printErrors()
-        this._errors.sort(|err1, err2| => err1[0] - err2[0])
-        for var _, error in this._errors
-            io.stderr.writeln(error)
-        end
-    end
-
-    fun clearErrors()
-        this._errors.clear()
+        return errorBuilder.join()
     end
 end

@@ -347,7 +347,7 @@ class VariableResolver is PassVisitor
         if !prevDecl or this._ignoreGlobalRedef and this._inGlobalScope()
             return this._defineName(token.getLexeme(), token.line(), this._getCurScope(), init)
         else
-            this._error("Variable '{0}' already declared, previous declaration at line {1}" %
+            this._error("Name '{0}' already declared, previous declaration at line {1}" %
                         (prevDecl.name, prevDecl.line), token)
             return null
         end
@@ -372,7 +372,7 @@ class VariableResolver is PassVisitor
                 this._error("Variable '{0}' (declared at line {1}) may be uninitialized" %
                             (variable.name, variable.line), token)
             end
-        elif !this._inMainScope()
+        elif !this._inMainFunc()
             this._fwdRefs.add(token)
         else
             this._error("Cannot resolve name '{0}'" % token.getLexeme(), token)
@@ -389,7 +389,7 @@ class VariableResolver is PassVisitor
     // UTILITY METHODS
     // -----------------------------------------------------------------------------
 
-    fun _inMainScope()
+    fun _inMainFunc()
         return this._functionDepth == 0
     end
 

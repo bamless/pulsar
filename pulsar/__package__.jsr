@@ -10,7 +10,7 @@ fun main(args)
         opt_parse.Option("no-resolve", "v", "Disable variable resolution pass", 0),
         opt_parse.Option("no-redefined-globals", "g", "Ignore redefined global variables", 0),
         opt_parse.Option("no-unreachable", "U", "Disable unreachable code pass", 0),
-        opt_parse.Option("no-unused-args", "a", "Ignore errors unused function arguments", 0),
+        opt_parse.Option("no-unused-args", "a", "Ignore unused function arguments", 0),
         opt_parse.Option("no-unused", "u", "Disable unused variable pass", 0),
         opt_parse.Option("no-check-returns", "r", "Disable return checking pass", 0),
     ])

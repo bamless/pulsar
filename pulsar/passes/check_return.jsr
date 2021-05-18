@@ -107,8 +107,4 @@ class ReturnChecker is PassVisitor
     fun _currentFunc()
         return this._functions[#this._functions - 1]
     end
-
-    fun _inMainScope()
-        return #this._functions == 0
-    end
 end

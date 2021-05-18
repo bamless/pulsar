@@ -18,7 +18,7 @@ fun main(args)
     var opts, files = parser.parse(args)
 
     var pulsar = Pulsar(opts)
-    var outFile = io.File(opts["output"], "w") if opts["output"] else io.stderr
+    var outFile = io.File(opts["out"], "w") if opts["out"] else io.stderr
 
     with PrettyReporter(outFile) reporter
         for var path in files

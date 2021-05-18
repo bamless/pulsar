@@ -72,7 +72,7 @@ class FileReporter is BufferedReporter
     end
 end
 
-// Formats errors in a human readable form and writes them on a file
+// Formats errors in a human readable form and writes them to a file
 class PrettyReporter is FileReporter
     fun new(file)
         super(file)

@@ -22,6 +22,7 @@ end
 class SemanticChecker is PassVisitor
     fun new(reporter)
         super(reporter)
+        this._classDepth = 0
         this._funcDepth = 0
         this._loopDepth = 0
     end
@@ -31,6 +32,12 @@ class SemanticChecker is PassVisitor
             this._checkUnpack(varDecl.equal, #varDecl.names, varDecl.init)
         end
         super(varDecl)
+    end
+
+    fun visitClass(cls)
+        this._enterClass()
+        super(cls)
+        this._exitClass()
     end
 
     fun visitFunc(func)
@@ -81,6 +88,12 @@ class SemanticChecker is PassVisitor
         end
     end
 
+    fun visitSuper(sup)
+        if !this._inClass()
+            this._error("Cano only use super inside of a method", sup.superTok)
+        end
+    end
+
     fun visitAssignment(assign)
         if assign.l is ast.TupleLit
             this._checkUnpack(assign.equal, #assign.l.expressions, assign.r)
@@ -104,12 +117,24 @@ class SemanticChecker is PassVisitor
         this._funcDepth -= 1
     end
 
+    fun _enterClass()
+        this._classDepth += 1
+    end
+
+    fun _exitClass()
+        this._classDepth -= 1
+    end
+
     fun _inLoop()
         return this._loopDepth != 0
     end
 
     fun _inFunction()
         return this._funcDepth != 0
+    end
+
+    fun _inClass()
+        return this._classDepth != 0
     end
     
     fun _checkUnpack(errTok, numUnpacks, rvalue)

@@ -1,0 +1,121 @@
+import parse.ast as ast
+
+import pulsar.passes.pass_visitor for PassVisitor
+import pulsar.symtable for SymbolTable
+
+static var PRIV_PREFIX = "_"
+static var THIS_LEXEME = "this"
+static var CTOR_NAME = "new"
+
+static fun isAllCaps(token)
+    var allCaps = true
+    var capsEncountered = false
+
+    var lexeme = token.getLexeme()
+    for var i = 0; i < #lexeme; i += 1
+        var lexemeChar = lexeme.charAt(i)
+        if lexemeChar == char("_")
+            continue
+        end
+        var isCaps = lexemeChar >= char("A") and lexemeChar <= char("Z")
+        allCaps = allCaps and isCaps
+        capsEncountered = true
+    end
+    
+    return allCaps and capsEncountered
+end
+
+static fun isConstructor(func)
+    return func.name.getLexeme() == CTOR_NAME
+end
+
+static fun isThisLiteral(expr)
+    return expr is ast.VarLit and expr.id.getLexeme() == THIS_LEXEME
+end
+
+static fun isPrivate(token)
+    return token.getLexeme().startsWith(PRIV_PREFIX)
+end
+
+class AccessChecker is PassVisitor
+    fun new(reporter)
+        super(reporter)
+        this._classDepth = 0
+        this._functions = []
+    end
+
+    fun visitFunc(func)
+        this._enterFunction(func)
+        super(func)
+        this._exitFunction()
+    end
+
+    fun visitClass(cls)
+        this._enterClass()
+        super(cls)
+        this._exitClass()
+    end
+
+    fun visitAttribute(attribute)
+        if isPrivate(attribute.name) and !(this._inClass() and isThisLiteral(attribute.l)) 
+            this._error("Accessing supposedly private attribute '{0}'" % attribute.name.getLexeme(),
+                        attribute.name)
+        end
+        super(attribute)
+    end
+
+    fun visitAssignment(assign)
+        if assign.l is ast.TupleLit
+            for var lhs in assign.l.expressions
+                this._checkConstantAssign(lhs)
+            end
+        else
+            this._checkConstantAssign(assign.l)
+        end
+
+        super(assign)
+    end
+
+    fun _checkConstantAssign(expr)
+        // Don't check for constant assignments in constructors
+        if this._inClass() and isConstructor(this._currentFunction()) and isThisLiteral(expr.l)
+            return
+        end
+
+        var identifier = null
+        if expr is ast.VarLit
+            identifier = expr.id
+        elif expr is ast.AttributeExpr
+            identifier = expr.name
+        end
+
+        if identifier and isAllCaps(identifier)
+            this._error("Assigning to supposedly constant name {0}" % identifier.getLexeme(),
+                        identifier)
+        end
+    end
+
+    fun _enterClass()
+        this._classDepth += 1
+    end
+
+    fun _exitClass()
+        this._classDepth -= 1
+    end
+
+    fun _inClass()
+        return this._classDepth != 0
+    end
+
+    fun _enterFunction(func)
+        this._functions.add(func)
+    end
+
+    fun _exitFunction()
+        this._functions.pop()
+    end
+
+    fun _currentFunction()
+        return this._functions[#this._functions - 1]
+    end
+end

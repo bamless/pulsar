@@ -1,6 +1,7 @@
 import parse.source as source
 import parse.parser for Parser
 
+import pulsar.passes.check_access for AccessChecker
 import pulsar.passes.check_return for ReturnChecker
 import pulsar.passes.check_semantics for SemanticChecker
 import pulsar.passes.check_unused for UnusedChecker
@@ -38,6 +39,10 @@ class Pulsar
         if !opts["no-unreachable"]
             var unreachChecker = UnreachableCodeChecker(reporter)
             ast.accept(unreachChecker)
+        end
+        if !opts["no-access-check"]
+            var accessChecker = AccessChecker(reporter)
+            ast.accept(accessChecker)
         end
     end
 end

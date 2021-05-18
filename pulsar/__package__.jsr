@@ -13,6 +13,7 @@ fun main(args)
         opt_parse.Option("no-unused-args", "a", "Ignore unused function arguments", 0),
         opt_parse.Option("no-unused", "u", "Disable unused variable pass", 0),
         opt_parse.Option("no-check-returns", "r", "Disable return checking pass", 0),
+        opt_parse.Option("no-access-check", "A", "Disable access checking pass", 0)
     ])
 
     var opts, files = parser.parse(args)

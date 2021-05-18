@@ -35,7 +35,7 @@ class BufferedReporter is ErrorReporter
     end
 
     // Reports all recorded errors till now and clears the error buffer.
-    // The errors are sorted by line
+    // The errors are sorted by line.
     // This, being a template method, musn't be overridden by subclasses 
     fun reportErrors()
         this._errors.sort(|e1, e2| => e1[1].line() - e2[1].line())

@@ -22,13 +22,13 @@ class BufferedReporter is ErrorReporter
         this._errors.add((message, token))
     end
 
-    // Primitive method called during `reporteErrors` to format an error.
+    // Primitive method called during `reportErrors` to format an error.
     // To be overridden by subclasses for customizing how an error should be formatted
     fun doFormatError(message_, token_)
         raise NotImplementedException()
     end
 
-    // Primitive method called during `reporteErrors` to output a formatted error.
+    // Primitive method called during `reportErrors` to output a formatted error.
     // To be overridden by subclasses for customizing where the error should be output
     fun doOutputError(error_)
         raise NotImplementedException()

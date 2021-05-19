@@ -10,15 +10,13 @@ static var CTOR_NAME   = "new"
 
 static fun isAllCaps(token)
     var lexeme = token.getLexeme()
+
     if lexeme.all(|c| => c == "_")
         return false
     end
 
-    for var i = 0; i < #lexeme; i += 1
-        var lexChar = lexeme.charAt(i)
-        if lexChar >= char("a") and lexChar <= char("z")
-            return false
-        end
+    if lexeme.any(|c| => char(c) >= char("a") and char(c) <= char("z"))
+        return false
     end
 
     return true

@@ -3,8 +3,9 @@ import re
 
 // Returns a list with the offsets of all newlines in the string
 static fun getLines(string)
+    // Capture all newlines offsets with `()` syntax
     var lines = re.gmatch(string, '()\n')
-    // Add syntethic newlines before the start and the end
+    // Add syntethic newlines before the start and at the end
     lines.insert(0, -1)
     lines.insert(#lines, #string)
     return lines

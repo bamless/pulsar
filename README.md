@@ -5,23 +5,32 @@ written in **J\***.
 
 ## Supported features
 
-The analysis of source files is broken down in multiple passes each reporting a specific class of
-errors. For now all passes are always enabled, but in the near future they will be toggleable via
-command line arguments.
+The analysis of source files is broken down into multiple passes each reporting a specific class of
+errors. Each pass can be disabled at will, and the behaviour of some of them can be changed by
+passing extra command line options. To list all available options simply pass `-h` flag to pulsar.
 
 ### Syntax analysis pass
 Or more simply, the parser. This reports syntax errors and some more semantic ones like assignment 
-to a non-lvalue expression. This pass does exactly the same things that the `jstar` command line
-interface and the `jstarc` compiler already do, and its main use is to obtain a correctly formed
-parse tree on which to apply subsequent passses. If this pass fails with an error, no other pass
-will be executed, as we do not support partial parsing of source code.
+to a non-lvalue expression. This pass does exactly the same things that the **J\*** runtime parser
+already does, and its main use is to obtain a correctly formed parse tree on which to apply 
+subsequent passses. If this pass fails with an error, no other pass will be executed, as we do not
+support partial parsing of source code. Obviously, this pass can't be disabled.
+
+### Semantic checking pass
+This pass performs the same checks that the **J\*** runtime compiler already does, such as unpacking
+declarations/assignments consistency, usage of break/continue inside loops and checking that return
+statements are inside functions. This pass can't be disabled, as source files that don't pass these
+checks are not considered valid **J\*** source files.
 
 ### Variable resolution pass
 This pass is responsible for checking variable declarations and their use. It makes sure that
 variables respect scoping rules and that are declared before usage. It also checks for possibly
-uninitialize variables. A variable is considered uninitialized if its declaration doesn't have an initializer and its not assigned to a value in all execution paths prior to its usage.
-Another check that is performed is the checking of declaration before usage of `static` global
-variables.  
+uninitialized variables. A variable is considered uninitialized if its declaration doesn't have an 
+initializer and its not assigned a value in all execution paths prior to its usage. Another check 
+that is performed is the checking of declaration before usage of `static` global variables.  
+This pass can be completely disabled by passing the `-v, --no-variable-resolution` option.  
+By passing the `-g, --no-redefined-globals` this pass will not check for redefinition of global
+variables, as they are technically allowed by the language.  
 Examples:
 
 resolve.jsr:
@@ -67,15 +76,17 @@ This pass checks that all declared local variables (or static global ones) are a
 program. Global variables are not checked as they form the API of the module and are accessible from
 the outside. To make pulsar ignore a specific variable and not report an error, append a trailing 
 underscore to its name.  
+This pass can be disabled by passing the `-u, --no-unused` command line option.  
 Examples:
 
 unused.jsr:
 ```lua
 fun test(arg1, arg2)
-    var z = "Zed"
+    var foo = "bar"
     print(arg1)
 end
 
+// pulsar will not warn for the unused `arg_` as its name ends with a trailing underscore
 fun stub(arg_)
     raise NotImplementedException()
 end
@@ -89,37 +100,16 @@ fun test(arg1, arg2)
 Name 'arg2' declared but not used
 File unused.jsr [line 2]:
 
-    var z = "Zed"
-        ^
-Name 'z' declared but not used
-```
-
-### Illegal unpacks pass
-This pass checks for illegal unpacking variable declarations or assignments.  
-Examples:
-
-unpack.jsr:
-```lua
-var a, b, c = 1, 2
-```
-output:
-```
-Analyzing unpack.jsr...
-File unpack.jsr [line 1]:
-var a, b, c = 1, 2
-            ^
-Too few values to unpack: expected 3, got 2
-File unpack.jsr [line 2]:
-
-a, b, c = "Not a Tuple"
-        ^
-Right hand side of unpack must be a Tuple or a List
+    var foo = "bar"
+        ^~~
+Name 'foo' declared but not used
 ```
 
 ### Return check pass
 This pass reports non-void functions that don't return a result on all possible execution paths. A
 function is considered non-void if it has at least one non-bare return (a return statement with an
 expression).  
+This pass can be disabled by passing the `-r, --no-check-returns` option.  
 Examples:
 
 return.jsr:
@@ -143,6 +133,7 @@ Non-void function 'foo' doesn't return a value on all execution paths
 ### Unreachable code pass
 This pass checks for unreachable statements, for example statements that follow a `return` or a
 `raise` that is always executed.  
+This pass can be disabled by passing the `-U, --no-unreachable` option.  
 Example:
 
 unreachable.jsr
@@ -174,6 +165,51 @@ File unreachable.jsr [line 12]:
     return y
     ^~~~~~
 Unreachable statement. Previous statement breaks control unconditionally
+```
+
+## Acces checking pass
+This pass checks for and enforces naming conventions for private attributes/methods and constant
+variables. Specifically, an attribute/method starting with an underscore (`_`) is considered private
+to the current class and can't be accessed by anything but `this`. Variables are instead considered
+constants if their names are composed only of capital letters and underscores. For constant
+attribute variables, we do not warn if they are assigned to in the constructor, as otherwise there
+won't be a way to initialize them.  
+This pass can be disabled by passing the `-A, --no-access-check` option.  
+Example:
+
+access.jsr
+```lua
+var PI = 3.141592
+
+class Foo
+    fun new(bar)
+        this._bar = bar
+    end
+
+    fun getBar()
+        return this._bar
+    end
+end
+
+var foo = Foo("bar")
+
+print(foo._bar)
+print(foo.getBar())
+
+PI = 3.15
+print(PI)
+```
+output:
+```
+Analyzing access.jsr...
+File access.jsr [line 15]:
+print(foo._bar)
+          ^~~~
+Accessing supposedly private attribute '_bar'
+File access.jsr [line 18]:
+PI = 3.15
+^~
+Assigning to supposedly constant name PI
 ```
 
 ## How to use

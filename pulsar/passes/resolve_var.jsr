@@ -214,12 +214,7 @@ class VariableResolver is PassVisitor
         if tryStmt.excepts != null
             for var exc in tryStmt.excepts
                 var init = exc.accept(this)
-
-                if excInit
-                    excInit = intersect(excInit, tryInit)
-                else
-                    excInit = init
-                end
+                excInit = intersect(excInit, tryInit) if excInit else init
             end
         end
 

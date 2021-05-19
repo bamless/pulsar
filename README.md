@@ -7,7 +7,8 @@ written in **J\***.
 
 The analysis of source files is broken down into multiple passes each reporting a specific class of
 errors. Each pass can be disabled at will, and the behaviour of some of them can be changed by
-passing extra command line options. To list all available options simply pass `-h` flag to pulsar.
+passing extra command line options. To list all available options simply pass the `-h` flag to
+pulsar.
 
 ### Syntax analysis pass
 Or more simply, the parser. This reports syntax errors and some more semantic ones like assignment 

@@ -95,7 +95,7 @@ end
 output:
 ```
 Analyzing unused.jsr...
-File test.jsr [line 1]:
+File unused.jsr [line 1]:
 fun test(arg1, arg2)
                ^~~~
 Name 'arg2' declared but not used

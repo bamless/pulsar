@@ -218,7 +218,7 @@ Assigning to supposedly constant name PI
 Pulsar doesn't have any dependency (aside from the obvious one of **J\***) so using it is as simple
 as cloning the repository:
 ```bash
-https://github.com/bamless/pulsar.git
+git clone https://github.com/bamless/pulsar.git
 ```
 moving in its directory:
 ```bash

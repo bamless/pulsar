@@ -5,9 +5,7 @@ import io
 class ErrorReporter
     // @arg message A description of the error
     // @arg token   Token involved in the error
-    fun reportError(message_, token_)
-        raise NotImplementedException()
-    end
+    fun reportError(message_, token_) raise NotImplementedException() end
 end
 
 // Abstract implementation of ErrorReporter that buffers the errors and
@@ -24,15 +22,11 @@ class BufferedReporter is ErrorReporter
 
     // Primitive method called during `reportErrors` to format an error.
     // To be overridden by subclasses for customizing how an error should be formatted
-    fun doFormatError(message_, token_)
-        raise NotImplementedException()
-    end
+    fun doFormatError(message_, token_) raise NotImplementedException() end
 
     // Primitive method called during `reportErrors` to output a formatted error.
     // To be overridden by subclasses for customizing where the error should be output
-    fun doOutputError(error_)
-        raise NotImplementedException()
-    end
+    fun doOutputError(error_) raise NotImplementedException() end
 
     // Reports all recorded errors till now and clears the error buffer.
     // The errors are sorted by line.

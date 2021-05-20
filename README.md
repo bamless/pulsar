@@ -30,7 +30,7 @@ uninitialized variables. A variable is considered uninitialized if its declarati
 initializer and its not assigned a value in all execution paths prior to its usage. Another check 
 that is performed is the checking of declaration before usage of `static` global variables.  
 This pass can be completely disabled by passing the `-v, --no-variable-resolution` option.  
-By passing the `-g, --no-redefined-globals` this pass will not check for redefinition of global
+By passing the `-g, --no-redefined-globals` option, this pass will not check for redefinition of global
 variables, as they are technically allowed by the language.  
 Examples:
 
@@ -78,6 +78,7 @@ program. Global variables are not checked as they form the API of the module and
 the outside. To make pulsar ignore a specific variable and not report an error, append a trailing 
 underscore to its name.  
 This pass can be disabled by passing the `-u, --no-unused` command line option.  
+By passing the `-a, --no-unused-args` option, the pass will not warn about unused function arguments.  
 Examples:
 
 unused.jsr:
@@ -168,7 +169,7 @@ File unreachable.jsr [line 12]:
 Unreachable statement. Previous statement breaks control unconditionally
 ```
 
-## Acces checking pass
+## Access checking pass
 This pass checks for and enforces naming conventions for private attributes/methods and constant
 variables. Specifically, an attribute/method starting with an underscore (`_`) is considered private
 to the current class and can't be accessed by anything but `this`. Variables are instead considered

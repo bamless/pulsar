@@ -100,3 +100,17 @@ class PrettyReporter is FileReporter
         return errorBuilder.join()
     end
 end
+
+class JsonReporter is FileReporter
+    fun doFormatError(message, token)
+        return ##{
+            "severity" : '"error"', // TODO: add more severities
+            "path"     : '"{0}"' % token.getSource().path,
+            "start"    : token.start(),
+            "end"      : token.start() + token.length(),
+            "line"     : token.line(),
+            "coloumn"  : token.coloumn(),
+            "message"  : '"{0}"' % message.escaped()
+        }
+    end
+end

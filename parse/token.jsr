@@ -115,6 +115,14 @@ class Token
         return this._source.coloumnAt(this._start + this._length)
     end
 
+    fun start()
+        return this._start
+    end
+
+    fun length()
+        return this._length
+    end
+
     fun getSource()
         return this._source
     end

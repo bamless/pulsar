@@ -106,7 +106,7 @@ class Lexer
     end
 
     fun rewindTo(tok)
-        this._ptr = this._tokenStart = tok._start
+        this._ptr = this._tokenStart = tok.start()
     end
     
     // Returns the next token in the source file

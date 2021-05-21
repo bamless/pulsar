@@ -13,8 +13,8 @@ class Pulsar
         this._opts = opts
     end
 
-    fun analyzeFile(path, reporter)
-        var parser = Parser(source.fromFile(path), reporter.reportError)
+    fun analyze(source, reporter)
+        var parser = Parser(source, reporter.reportError)
         var ast = parser.parse()
         if !ast return end
 
@@ -44,5 +44,9 @@ class Pulsar
             var accessChecker = AccessChecker(reporter)
             ast.accept(accessChecker)
         end
+    end
+
+    fun analyzeFile(path, reporter)
+        this.analyze(source.fromFile(path), reporter)
     end
 end

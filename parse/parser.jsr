@@ -940,9 +940,12 @@ class Parser
         if this._match(type)
             return this._advance()
         end
+
+        var eof = Token(this._lex._src, Type.EOF, #this._lex._src, 0)
         this._error("Expected token `{0}`, instead got `{1}`" %
-                    (Type.name(type), Type.name(this._curr.type)))
-        return Token(this._lex._src, Type.ERR, 0, 0)
+                    (Type.name(type), Type.name(this._curr.type)), eof)
+        
+        return eof
     end
 
     fun _requireStmtEnd()

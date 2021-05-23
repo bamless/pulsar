@@ -25,6 +25,10 @@ static fun isAllCaps(token)
     return capsEncountered
 end
 
+static fun isDunder(name)
+    return name.startsWith(DUNDER) and name.endsWith(DUNDER)
+end
+
 static fun isCtorName(func)
     return func.name.getLexeme() == CTOR_NAME
 end
@@ -34,8 +38,8 @@ static fun isThisLit(expr)
 end
 
 static fun isPrivate(token)
-    var lex = token.getLexeme()
-    return lex.startsWith(PRIV_PREFIX) and !(lex.startsWith(DUNDER) and lex.endsWith(DUNDER))
+    var lexeme = token.getLexeme()
+    return lexeme.startsWith(PRIV_PREFIX) and !isDunder(lexeme)
 end
 
 class AccessChecker is PassVisitor

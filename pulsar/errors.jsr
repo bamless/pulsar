@@ -9,8 +9,9 @@ var Severity = Enum(
 // Error reporter interface.
 // The various error checking passes call `reportError` every time they encounter a problem
 class ErrorReporter
-    // @arg message A description of the error
-    // @arg token   Token involved in the error
+    // @arg severity The severity of the error
+    // @arg message  A description of the error
+    // @arg token    Token involved in the error
     fun reportError(severity_, message_, token_) raise NotImplementedException() end
 end
 
@@ -28,7 +29,7 @@ class BufferedReporter is ErrorReporter
 
     // Primitive method called during `reportErrors` to format an error.
     // To be overridden by subclasses for customizing how an error should be formatted
-    fun doFormatError(severity, message_, token_) raise NotImplementedException() end
+    fun doFormatError(severity_, message_, token_) raise NotImplementedException() end
 
     // Primitive method called during `reportErrors` to output a formatted error.
     // To be overridden by subclasses for customizing where the error should be output

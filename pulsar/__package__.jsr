@@ -20,7 +20,6 @@ fun main(args)
     var opts, files = parser.parse(args)
 
     var pulsar = Pulsar(opts)
-
     var outFile = io.File(opts["out"], "w") if opts["out"] else io.stderr
     var reporter = JsonReporter(outFile) if opts["json"] else PrettyReporter(outFile)
 

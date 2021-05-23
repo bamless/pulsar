@@ -156,6 +156,7 @@ class Parser
         typeAssert(errorCallback, Function, "errorCallback")
         this._lex = Lexer(sourceFile)
         this._errorCallback = errorCallback
+        this._source = sourceFile
         this._hadError = false
         this._panic = false
         this._curr = null
@@ -943,7 +944,7 @@ class Parser
 
         this._error("Expected token `{0}`, instead got `{1}`" %
                     (TypeNames[type], TypeNames[this._curr.type]))
-        return Token(this._lex._src, Type.ERR, #this._lex._src, 0)
+        return Token(this._source, Type.ERR, #this._source, 0)
     end
 
     fun _requireStmtEnd()

@@ -6,6 +6,11 @@ import pulsar.symtable for SymbolTable
 
 // Variables whose name ends with this string are ignored by the usage checker
 static var IGNORE_SUFFIX = "_"
+static var DUNDER = "__"
+
+static fun isDunder(name)
+    return name.startsWith(DUNDER) and name.startsWith(DUNDER)
+end
 
 class UnusedChecker is PassVisitor
     fun new(reporter, ignoreUnusedArg=false)
@@ -135,7 +140,7 @@ class UnusedChecker is PassVisitor
 
     fun visitVarLit(varLit)
         var name = varLit.id.getLexeme()
-        if name.endsWith(IGNORE_SUFFIX)
+        if name.endsWith(IGNORE_SUFFIX) and !isDunder(name)
             this._warn("Name '{0}' not ignored as it ought to be" % name, varLit.id)
         end
         this._setUsed(varLit.id)

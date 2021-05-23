@@ -214,6 +214,10 @@ PI = 3.15
 Assigning to supposedly constant name PI
 ```
 
+## IDE Integration
+
+Pulsar has been integrated in Visual Studio Code, you can download the extension from [here](https://marketplace.visualstudio.com/items?itemName=bamless.vsc-jstar-extension&utm_source=VSCode.pro&utm_campaign=AhmadAwais)
+
 ## How to use
 
 Pulsar doesn't have any dependency (aside from the obvious one of **J\***) so using it is as simple

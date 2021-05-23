@@ -1,3 +1,14 @@
+// Human readable names of the `Type` enum
+var TypeNames = [
+    "(", ")", "[", "]", "{", "}", "!", "!=", ",", ".", "...", "=>", "=", "+=", "-=", "/=", "*=",
+    "%=", "==", ">", ">=", "<", "<=", "<<", ">>", "+", "-", "/", "*", "%", "^", "#", "##", "&",
+    "~", ":", "|", ";", "in", "begin", "end", "IDENTIFIER", "STRING", "NUMBER", "and", "class",
+    "else", "false", "native", "fun", "for", "if", "elif", "null", "or", "return", "import",
+    "as", "is", "super", "true", "var", "static", "while", "continue", "break", "try", "except",
+    "ensure", "raise", "with", "UNTERMINATED_STR", "NEWLINE", "ERR", "EOF"
+]
+
+// Enumeration encoding different types of token
 var Type = Enum(
     "LPAREN",
     "RPAREN",
@@ -48,7 +59,6 @@ var Type = Enum(
 
     "IDENTIFIER",
     "STRING",
-    "COMMAND",
     "NUMBER",
 
     "AND",
@@ -62,7 +72,6 @@ var Type = Enum(
     "ELIF",
     "NULL",
     "OR",
-    "PRINT",
     "RETURN",
     "IMPORT",
     "AS",
@@ -87,6 +96,7 @@ var Type = Enum(
     "EOF"
 )
 
+// A J* lexical token
 class Token
     fun new(source, type, start, length)
         this.type = type
@@ -136,6 +146,6 @@ class Token
     end
 
     fun __string__()
-        return "Token({0}) '{1}'" % (Type.name(this.type), this.getLexeme().escaped()) 
+        return "Token({0}, '{1}')" % (Type.name(this.type), this.getLexeme().escaped()) 
     end
 end

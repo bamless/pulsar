@@ -30,11 +30,11 @@ class ReturnChecker is PassVisitor
         var returnsOnAllPaths = func.body.accept(this)
         if funcItem.doesReturn() and !returnsOnAllPaths
             if func.name
-                this._error("Non-void function '{0}' doesn't return a value on all execution paths" %
-                            func.name.getLexeme(), func.name)
+                this._warn("Non-void function '{0}' doesn't return a value on all execution paths" %
+                           func.name.getLexeme(), func.name)
             else
-                this._error("Non-void function does not return a value on all execution paths",
-                            func.funTok)
+                this._warn("Non-void function does not return a value on all execution paths",
+                           func.funTok)
             end
         end
 

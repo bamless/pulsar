@@ -1,6 +1,7 @@
 import parse.source as source
 import parse.parser for Parser
 
+import pulsar.errors for Severity
 import pulsar.passes.check_access for AccessChecker
 import pulsar.passes.check_return for ReturnChecker
 import pulsar.passes.check_semantics for SemanticChecker
@@ -14,7 +15,10 @@ class Pulsar
     end
 
     fun analyze(source, reporter)
-        var parser = Parser(source, reporter.reportError)
+        var parser = Parser(source, fun(message, token)
+            reporter.reportError(Severity.ERROR, message, token)
+        end)
+
         var ast = parser.parse()
         if !ast return end
 

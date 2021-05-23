@@ -1,11 +1,17 @@
 import parse.visitor for Visitor
 
+import pulsar.errors for Severity
+
 class PassVisitor is Visitor
     fun new(reporter)
         this._reporter = reporter
     end
 
     fun _error(message, token)
-        this._reporter.reportError(message, token)
+        this._reporter.reportError(Severity.ERROR, message, token)
+    end
+
+    fun _warn(message, token)
+        this._reporter.reportError(Severity.WARNING, message, token)
     end
 end

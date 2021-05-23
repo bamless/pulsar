@@ -364,7 +364,7 @@ class VariableResolver is PassVisitor
         var variable = this._lookupVariable(token)
         if variable
             if !this._initialized.lookup(variable)
-                this._error("Variable '{0}' (declared at line {1}) may be uninitialized" %
+                this._warn("Variable '{0}' (declared at line {1}) may be uninitialized" %
                             (variable.name, variable.line), token)
             end
         elif !this._inMainFunc()

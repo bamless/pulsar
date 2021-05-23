@@ -136,7 +136,7 @@ class UnusedChecker is PassVisitor
     fun visitVarLit(varLit)
         var name = varLit.id.getLexeme()
         if name.endsWith(IGNORE_SUFFIX)
-            this._error("Name '{0}' not ignored as it ought to be" % name, varLit.id)
+            this._warn("Name '{0}' not ignored as it ought to be" % name, varLit.id)
         end
         this._setUsed(varLit.id)
     end
@@ -149,7 +149,7 @@ class UnusedChecker is PassVisitor
         var used = this._variables.getScope(-1)
         for var token in used
             if !used[token] and !token.getLexeme().endsWith(IGNORE_SUFFIX)
-                this._error("Name '{0}' declared but not used" % token.getLexeme(), token)
+                this._warn("Name '{0}' declared but not used" % token.getLexeme(), token)
             end
         end
         this._variables.exitScope()

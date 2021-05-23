@@ -1,11 +1,16 @@
 import io
 
+var Severity = Enum(
+    "WARNING",
+    "ERROR"
+)
+
 // Error reporter interface.
 // The various error checking passes call `reportError` every time they encounter a problem
 class ErrorReporter
     // @arg message A description of the error
     // @arg token   Token involved in the error
-    fun reportError(message_, token_) raise NotImplementedException() end
+    fun reportError(severity_, message_, token_) raise NotImplementedException() end
 end
 
 // Abstract implementation of ErrorReporter that buffers the errors and
@@ -16,13 +21,13 @@ class BufferedReporter is ErrorReporter
     end
 
     // Buffers an error to be reported at a later time
-    fun reportError(message, token)
-        this._errors.add((message, token))
+    fun reportError(severity, message, token)
+        this._errors.add((severity, message, token))
     end
 
     // Primitive method called during `reportErrors` to format an error.
     // To be overridden by subclasses for customizing how an error should be formatted
-    fun doFormatError(message_, token_) raise NotImplementedException() end
+    fun doFormatError(severity, message_, token_) raise NotImplementedException() end
 
     // Primitive method called during `reportErrors` to output a formatted error.
     // To be overridden by subclasses for customizing where the error should be output
@@ -32,9 +37,9 @@ class BufferedReporter is ErrorReporter
     // The errors are sorted by line.
     // This, being a template method, musn't be overridden by subclasses 
     fun reportErrors()
-        this._errors.sort(|e1, e2| => e1[1].line() - e2[1].line())
-        for var message, token in this._errors
-            this.doOutputError(this.doFormatError(message, token))
+        this._errors.sort(|e1, e2| => e1[2].line() - e2[2].line())
+        for var severity, message, token in this._errors
+            this.doOutputError(this.doFormatError(severity, message, token))
         end
         this._errors.clear()
     end
@@ -72,7 +77,7 @@ class PrettyReporter is FileReporter
         super(file)
     end
 
-    fun doFormatError(message, token)
+    fun doFormatError(severity, message, token)
         var lineStart = token.line()
         var colStart = token.coloumn() - 1
         var colEnd = token.coloumnEnd() - 1
@@ -80,7 +85,9 @@ class PrettyReporter is FileReporter
         var src = token.getSource()
         var line = src.getLine(lineStart)
 
-        var errorBuilder = ["File {0} [line {1}]:\n" % (src.path, lineStart)]
+        var errorBuilder = ["File {0} [line {1}]: " % (src.path, lineStart)]
+        errorBuilder.add("Error" if severity == Severity.ERROR else "Warning")
+        errorBuilder.add(":\n")
         errorBuilder.add(line)
         errorBuilder.add("\n")
         for var i = 0; i < colStart; i += 1
@@ -96,9 +103,9 @@ class PrettyReporter is FileReporter
 end
 
 class JsonReporter is FileReporter
-    fun doFormatError(message, token)
+    fun doFormatError(severity, message, token)
         return ##{
-            '"severity"' : '"error"', // TODO: add more severities
+            '"severity"' : '"error"' if severity == Severity.ERROR else '"warning"',
             '"path"'     : '"{0}"' % token.getSource().path,
             '"start"'    : token.start(),
             '"end"'      : token.start() + token.length(),

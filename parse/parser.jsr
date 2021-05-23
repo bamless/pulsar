@@ -457,7 +457,7 @@ class Parser
 
     fun _forEachStmt(forTok, variable)
         if variable.init
-            this._error('Variable declaration in foreach cannot have initializer', variable.equal)
+            this._error('Variable declaration in foreach cannot have an initializer', variable.equal)
         end
 
         var inTok = this._advance()
@@ -1000,7 +1000,7 @@ class Parser
 
     fun _checkUnpackAssignment(tuple)
         if this._curr.type != Type.EQUAL
-            this._error('Cannot unpack compound assignment')
+            this._error('Cannot unpack a compound assignment')
             return
         end
         for var expr in tuple.expressions

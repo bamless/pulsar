@@ -6,7 +6,7 @@ import pulsar.symtable for SymbolTable
 
 // Variables whose name ends with this string are ignored by the usage checker
 static var IGNORE_SUFFIX = "_"
-static var DUNDER = "__"
+static var DUNDER        = "__"
 
 static fun isDunder(name)
     return name.startsWith(DUNDER) and name.startsWith(DUNDER)

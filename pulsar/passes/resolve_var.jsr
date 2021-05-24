@@ -94,7 +94,7 @@ class VariableResolver is PassVisitor
 
     fun visitFunc(func)
         if func.isStatic()
-            this._detectUseBefore(func.name)
+            this._detectStaticUseBefore(func.name)
         end
         this._define(func.name, true)
         this._visitFuncBody(func)
@@ -102,7 +102,7 @@ class VariableResolver is PassVisitor
 
     fun visitClass(cls)
         if cls.isStatic()
-            this._detectUseBefore(cls.name)
+            this._detectStaticUseBefore(cls.name)
         end
 
         this._define(cls.name, true)
@@ -139,7 +139,7 @@ class VariableResolver is PassVisitor
 
     fun visitNative(nat)
         if nat.isStatic()
-            this._detectUseBefore(nat.name)
+            this._detectStaticUseBefore(nat.name)
         end
         this._define(nat.name, true)
         super(nat)
@@ -149,7 +149,7 @@ class VariableResolver is PassVisitor
         var variables = []
         for var id in varDecl.names
             if varDecl.isStatic()
-                this._detectUseBefore(id)
+                this._detectStaticUseBefore(id)
             end
             variables.add(this._define(id, false))
         end
@@ -163,7 +163,9 @@ class VariableResolver is PassVisitor
         end
     end
 
-    fun _detectUseBefore(token)
+    fun _detectStaticUseBefore(token)
+        if !this._inGlobalScope() return end
+
         var name = token.getLexeme()
         for var fwd in this._fwdRefs
             if name == fwd.getLexeme()

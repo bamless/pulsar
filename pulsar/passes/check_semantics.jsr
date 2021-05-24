@@ -22,12 +22,20 @@ end
 class SemanticChecker is PassVisitor
     fun new(reporter)
         super(reporter)
+        this._scopeDepth = 0
         this._classDepth = 0
         this._funcDepth = 0
         this._loopDepth = 0
     end
 
+    fun visitBlock(block)
+        this._enterScope()
+        super(block)
+        this._exitScope()
+    end
+
     fun visitVar(varDecl)
+        this._checkStatic(varDecl)
         if varDecl.unpack and varDecl.init
             this._checkUnpack(varDecl.equal, #varDecl.names, varDecl.init)
         end
@@ -35,15 +43,22 @@ class SemanticChecker is PassVisitor
     end
 
     fun visitClass(cls)
+        this._checkStatic(cls)
         this._enterClass()
         super(cls)
         this._exitClass()
     end
 
     fun visitFunc(func)
+        this._checkStatic(func)
         this._enterFunction()
         super(func)
         this._exitFunction()
+    end
+
+    fun visitNative(nat)
+        this._checkStatic(nat)
+        super(nat)
     end
 
     fun visitFuncLit(func)
@@ -72,25 +87,25 @@ class SemanticChecker is PassVisitor
 
     fun visitBreak(brk)
         if !this._inLoop()
-            this._error("Cannot use break outside of a loop", brk.token)
+            this._error("Cannot use `break` outside of a loop", brk.token)
         end
     end
 
     fun visitContinue(cont)
         if !this._inLoop()
-            this._error("Cannot use break outside of a loop", cont.token)
+            this._error("Cannot use `break` outside of a loop", cont.token)
         end
     end
 
     fun visitReturn(returnStmt)
         if !this._inFunction()
-            this._error("Cannot use return outside of a function", returnStmt.returnTok)
+            this._error("Cannot use `return` outside of a function", returnStmt.returnTok)
         end
     end
 
     fun visitSuper(sup)
         if !this._inClass()
-            this._error("Cano only use super inside of a method", sup.superTok)
+            this._error("Cannot use `super` outside of a method", sup.superTok)
         end
     end
 
@@ -99,6 +114,21 @@ class SemanticChecker is PassVisitor
             this._checkUnpack(assign.equal, #assign.l.expressions, assign.r)
         end
         super(assign)
+    end
+
+    fun _checkStatic(decl)
+        if decl.isStatic() and !this._inGlobalScope()
+            this._error("Static declaration can only appear in global scope", 
+                        decl.representativeToken())
+        end
+    end
+
+    fun _enterScope()
+        this._scopeDepth += 1
+    end
+
+    fun _exitScope()
+        this._scopeDepth -= 1
     end
 
     fun _enterLoop()
@@ -123,6 +153,10 @@ class SemanticChecker is PassVisitor
 
     fun _exitClass()
         this._classDepth -= 1
+    end
+
+    fun _inGlobalScope()
+        return this._scopeDepth == 0
     end
 
     fun _inLoop()

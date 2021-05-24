@@ -3,8 +3,8 @@ import parse.ast as ast
 import pulsar.passes.pass_visitor for PassVisitor
 import pulsar.symtable for SymbolTable
 
-static var DUNDER      = "__"
 static var PRIV_PREFIX = "_"
+static var DUNDER      = "__"
 static var THIS_LEXEME = "this"
 static var CTOR_NAME   = "new"
 

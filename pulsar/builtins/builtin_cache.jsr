@@ -38,5 +38,6 @@ for var moduleName in BUILTIN_NAMES
             if cached break end
         end
     end
+    
     assert(cached, "Cannot cache builtin module `{0}`" % moduleName)
 end

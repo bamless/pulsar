@@ -458,7 +458,8 @@ class Parser
 
     fun _forEachStmt(forTok, variable)
         if variable.init
-            this._error('Variable declaration in foreach cannot have an initializer', variable.equal)
+            this._error('Variable declaration in foreach cannot have an initializer',
+                        variable.equal)
         end
 
         var inTok = this._advance()

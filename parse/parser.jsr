@@ -818,7 +818,7 @@ class Parser
 
             if this._match(Type.RPAREN)
                 var rightBracket = this._advance()
-                return ast.Tuple([], leftBracket, rightBracket)
+                return ast.TupleLit([], leftBracket, rightBracket)
             end
 
             var expr = this._expression()

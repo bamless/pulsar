@@ -1,7 +1,7 @@
 import io
 import re
 
-// Returns a list conatining the offsets of all newlines present in the string
+// Returns a list containing the offsets of all newlines present in the string
 static fun getLines(string)
     // Capture all newlines offsets with `()` syntax
     var lines = re.gmatch(string, "()\n")

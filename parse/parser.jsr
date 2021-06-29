@@ -751,6 +751,8 @@ class Parser
         while POSTFIX_OP[this._curr.type]
             if this._match(Type.DOT)
                 var dot = this._advance()
+                this._skipNewLines()
+                
                 var name = this._require(Type.IDENTIFIER)
                 lit = ast.AttributeExpr(lit, dot, name)
             elif this._match(Type.LCURLY)

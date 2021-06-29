@@ -30,10 +30,10 @@ fun main(args)
 
                 pulsar.analyzeFile(path, reporter)
                 
-                var numErrors = reporter.numErrors()
+                var errors, warnings = reporter.numErrors(), reporter.numWarnings()
                 reporter.reportErrors()
 
-                print("File {0}: {1} errors\n" % (path, numErrors))
+                print("File {0}: {1} errors, {2} warnings\n" % (path, errors, warnings))
             except io.IOException e
                 io.stderr.writeln("Error {0}: {1}\n" % (path, e.err()))
             end

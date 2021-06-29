@@ -6,6 +6,11 @@ var Severity = Enum(
     "ERROR"
 )
 
+// Consume an Iterable and return the number of elements contained in it
+static fun count(iterable)
+    return iterable.reduce(0, |count, _| => count + 1)
+end
+
 // Error reporter interface.
 // The various error checking passes call `reportError` every time they encounter a problem
 class ErrorReporter
@@ -48,7 +53,11 @@ class BufferedReporter is ErrorReporter
 
     // Returns the number of errors currently buffered
     fun numErrors()
-        return #this._errors
+        return count(this._errors.filter(|error| => error[0] == Severity.ERROR))
+    end
+
+    fun numWarnings()
+        return count(this._errors.filter(|error| => error[0] == Severity.WARNING))
     end
 end
 

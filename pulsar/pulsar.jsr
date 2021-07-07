@@ -15,7 +15,7 @@ class Pulsar
     end
 
     fun analyze(source, reporter)
-        var parser = Parser(source, |msg, tok| => reporter.reportError(Severity, msg, tok))
+        var parser = Parser(source, |msg, tok| => reporter.reportError(Severity.ERROR, msg, tok))
 
         var ast = parser.parse()
         if !ast return end

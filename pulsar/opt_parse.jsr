@@ -14,16 +14,15 @@ static fun buildHelpMessage(usage, description, optDesc)
     // Stringify options along with their description
     var optLines = [("-h, --help", "Show this help message and exit")]
     for var opt in optDesc
-        var option = "-{0}, --{1}" % (opt.short, opt.long)
+        var optString = "-{0}, --{1}" % (opt.short, opt.long)
         if opt.args > 0
-            option += " " + opt.argNames.map(|name| => "'" + name + "'").join(", ")
+            optString += " " + opt.argNames.map(|name| => "'" + name + "'").join(", ")
         end 
-        var description = opt.description
-        optLines.add((option, description))
+        optLines.add((optString, opt.description))
     end
 
     // Calculate the max coloumn width
-    var colWidth = optLines.map(|ln| => #ln[0]).reduce(0, |w1, w2| => max(w1, w2))
+    var colWidth = optLines.reduce(0, |width, line| => max(width, #line[0]))
 
     // Add options to the builder, left-jusifying the second coloumn to `colWidth`
     var helpOption, helpDescription = optLines.removeAt(0)
@@ -34,8 +33,7 @@ static fun buildHelpMessage(usage, description, optDesc)
     helpBuilder.add("\n\n")
 
     helpBuilder.add("Options")
-    for var line in optLines
-        var option, description = line
+    for var option, description in optLines
         helpBuilder.add("\n")
         helpBuilder.add(INDENT)
         helpBuilder.add(leftJustify(option, colWidth))

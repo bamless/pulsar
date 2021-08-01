@@ -518,6 +518,7 @@ class Parser
             expr = this._expression()
         end
 
+        this._requireStmtEnd()
         return ast.ReturnStmt(retTok, expr)
     end
 

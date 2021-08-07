@@ -1,0 +1,15 @@
+// Strings that have a special meaning in J* source files
+var CTOR_NAME   = "new"
+var THIS_NAME   = "this"
+var DUNDER      = "__"
+
+// Utility function for testing whether the provided token is the contructor name
+fun isCtor(token)
+    return token.getLexeme() == CTOR_NAME
+end
+
+// Utility function for testing whether the token is a `dunder` name
+fun isDunder(token)
+    var lexeme = token.getLexeme()
+    return lexeme.startsWith(DUNDER) and lexeme.endsWith(DUNDER)
+end

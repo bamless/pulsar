@@ -3,6 +3,7 @@ import parse.ast as ast
 import pulsar.passes.pass_visitor for PassVisitor
 import pulsar.symtable for SymbolTable
 
+// TODO: maybe move in a constant strings module
 static var PRIV_PREFIX = "_"
 static var DUNDER      = "__"
 static var THIS_LEXEME = "this"
@@ -29,7 +30,7 @@ static fun isDunder(name)
     return name.startsWith(DUNDER) and name.endsWith(DUNDER)
 end
 
-static fun isCtorName(func)
+static fun isCtor(func)
     return func.name.getLexeme() == CTOR_NAME
 end
 
@@ -83,7 +84,7 @@ class AccessChecker is PassVisitor
 
     fun _checkConstantAssign(expr)
         // Don't check for constant assignments in constructors when assigning to `this`
-        if this._inClass() and isCtorName(this._currentFunction()) and isThisLit(expr.l)
+        if this._inClass() and isCtor(this._currentFunction()) and isThisLit(expr.l)
             return
         end
 

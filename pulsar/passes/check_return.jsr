@@ -94,6 +94,13 @@ class ReturnChecker is PassVisitor
         return true
     end
 
+    fun visitRaise(raiseStmt)
+        raiseStmt.expression.accept(this)
+        // A raise statement, while not stricly returning, still causes 
+        // control to flow to the outer function, so return true
+        return true
+    end
+
     fun _enterFunction(node)
         var func = FuncItem(node)
         this._functions.add(func)

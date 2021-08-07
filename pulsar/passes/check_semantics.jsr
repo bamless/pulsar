@@ -2,6 +2,9 @@ import parse.ast as ast
 
 import pulsar.passes.pass_visitor for PassVisitor
 
+// TODO: maybe move in  a constant strings module
+static var CTOR_NAME = "new"
+
 static fun isConstUnpack(rvalue)
     return rvalue is ast.TupleLit or rvalue is ast.ListLit
 end
@@ -17,7 +20,7 @@ end
 // This are the same check performed by the J* runtime compiler
 // In detail it checks for:
 //   - break/continue statements outside of a loop
-//   - return statements outside of a function
+//   - return statements outside of a function or in a constructor
 //   - illegal unpacking declarations/assignments (either unbalanced, or using an invalid type)
 class SemanticChecker is PassVisitor
     fun new(reporter)
@@ -52,7 +55,20 @@ class SemanticChecker is PassVisitor
     fun visitFunc(func)
         this._checkStatic(func)
         this._enterFunction()
+
+        for var def in func.defaults
+            def.accept(this)
+        end
+
+        var isCtor = this._inClass() and func.name.getLexeme() == CTOR_NAME
+        if isCtor and func.body.statements.any(|s| => s is ast.ReturnStmt)
+            for var returnStmt in func.body.statements.filter(|s| => s is ast.ReturnStmt)
+                this._error("Cannot use `return` in constructor", returnStmt.returnTok)
+            end
+        end
+
         super(func)
+
         this._exitFunction()
     end
 

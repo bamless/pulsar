@@ -2,11 +2,8 @@ import parse.ast as ast
 
 import pulsar.builtins as builtins
 import pulsar.passes.pass_visitor for PassVisitor
-import pulsar.passes.strings for isDunder
-import pulsar.symtable for SymbolTable
-
-// Variables whose name ends with this string are ignored by the usage checker
-static var IGNORE_SUFFIX = "_"
+import pulsar.passes.symtable for SymbolTable
+import pulsar.passes.utils as utils
 
 class UnusedChecker is PassVisitor
     fun new(reporter, ignoreUnusedArg=false)
@@ -136,7 +133,7 @@ class UnusedChecker is PassVisitor
 
     fun visitVarLit(varLit)
         var name = varLit.id.getLexeme()
-        if name.endsWith(IGNORE_SUFFIX) and !isDunder(varLit.id)
+        if utils.isIgnored(varLit.id) and !utils.isDunder(varLit.id)
             this._warn("Name '{0}' not ignored as it ought to be" % name, varLit.id)
         end
         this._setUsed(varLit.id)
@@ -149,7 +146,7 @@ class UnusedChecker is PassVisitor
     fun _exitScope()
         var used = this._variables.getScope(-1)
         for var token in used
-            if !used[token] and !token.getLexeme().endsWith(IGNORE_SUFFIX)
+            if !used[token] and !utils.isIgnored(token)
                 this._warn("Name '{0}' declared but not used" % token.getLexeme(), token)
             end
         end

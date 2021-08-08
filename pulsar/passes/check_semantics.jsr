@@ -1,7 +1,7 @@
 import parse.ast as ast
 
 import pulsar.passes.pass_visitor for PassVisitor
-import pulsar.passes.strings for isCtor
+import pulsar.passes.utils as utils
 
 static fun isConstUnpack(rvalue)
     return rvalue is ast.TupleLit or rvalue is ast.ListLit
@@ -58,7 +58,7 @@ class SemanticChecker is PassVisitor
             def.accept(this)
         end
 
-        var inCtor = this._inClass() and isCtor(func.name)
+        var inCtor = this._inClass() and utils.isCtor(func.name)
         if inCtor and func.body.statements.any(|s| => s is ast.ReturnStmt)
             for var returnStmt in func.body.statements.filter(|s| => s is ast.ReturnStmt)
                 this._error("Cannot use `return` in constructor", returnStmt.returnTok)

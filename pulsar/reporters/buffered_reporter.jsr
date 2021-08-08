@@ -1,0 +1,50 @@
+import pulsar.reporters.reporter for IReporter, Severity
+
+// Consume an Iterable and return the number of elements contained in it
+static fun count(iterable)
+    return iterable.reduce(0, |count, _| => count + 1)
+end
+
+// Abstract implementation of IReporter that buffers the errors and
+// delays the reporting until `reportErrors` is called.
+// Primitive methods are used to let subclasses customize formatting and outputting of errors.
+class BufferedReporter is IReporter
+    fun new()
+        this._errors = []
+    end
+
+    // Primitive method called during `reportErrors` to format an error.
+    fun doFormatError(severity_, message_, token_)
+        raise NotImplementedException()
+    end
+
+    // Primitive method called during `reportErrors` to output a formatted error.
+    fun doOutputError(error_)
+        raise NotImplementedException()
+    end
+
+    // Buffers an error to be reported at a later time
+    fun reportError(severity, message, token)
+        this._errors.add((severity, message, token))
+    end
+
+    // Reports all recorded errors till now and clears the buffer. The errors are sorted by line.
+    // This, being a template method, musn't be overridden by subclasses 
+    fun reportErrors()
+        this._errors.sort(|e1, e2| => e1[2].line() - e2[2].line())
+        for var severity, message, token in this._errors
+            this.doOutputError(this.doFormatError(severity, message, token))
+        end
+        this._errors.clear()
+    end
+
+    // Returns the number of errors currently buffered
+    fun numErrors()
+        return count(this._errors.filter(|error| => error[0] == Severity.ERROR))
+    end
+
+    // Returns the number of warnings currently buffered
+    fun numWarnings()
+        return count(this._errors.filter(|error| => error[0] == Severity.WARNING))
+    end
+end

@@ -1,15 +1,19 @@
 import parse.source as source
 import parse.parser for Parser
 
-import pulsar.errors for Severity
 import pulsar.passes.check_access for AccessChecker
 import pulsar.passes.check_return for ReturnChecker
 import pulsar.passes.check_semantics for SemanticChecker
 import pulsar.passes.check_unused for UnusedChecker
 import pulsar.passes.check_unreach for UnreachableCodeChecker
 import pulsar.passes.resolve_var for VariableResolver
+import pulsar.reporters.reporter for Severity
 
+// Facade class for setting up and executing the various error checking passes.
 class Pulsar
+    // Construct a new Pulsar object configured with `opts`.
+    // `opts` is a set of strings that determine which passes will be run.
+    // Valid values of opts are exactly the same as the cli options, and have the same effects.
     fun new(opts)
         this._opts = opts
     end
@@ -18,7 +22,9 @@ class Pulsar
         var parser = Parser(source, |msg, tok| => reporter.reportError(Severity.ERROR, msg, tok))
 
         var ast = parser.parse()
-        if !ast return end
+        if !ast
+            return
+        end
 
         var opts = this._opts
 

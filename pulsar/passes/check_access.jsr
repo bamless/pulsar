@@ -1,35 +1,11 @@
 import parse.ast as ast
 
 import pulsar.passes.pass_visitor for PassVisitor
-import pulsar.passes.strings for isCtor, isDunder, THIS_NAME
-import pulsar.symtable for SymbolTable
-
-static var PRIV_PREFIX = "_"
-
-static fun isAllCaps(token)
-    var lexeme = token.getLexeme()
-    var capsEncountered = false
-
-    for var i = 0; i < #lexeme; i += 1
-        var lexChar = lexeme.charAt(i)
-        if !capsEncountered
-            capsEncountered = lexChar >= char("A") and lexChar <= char("Z")
-        end
-        if lexChar >= char("a") and lexChar <= char("z")
-            return false
-        end
-    end
-
-    return capsEncountered
-end
-
-static fun isPrivate(token)
-    var lexeme = token.getLexeme()
-    return lexeme.startsWith(PRIV_PREFIX) and !isDunder(token)
-end
+import pulsar.passes.symtable for SymbolTable
+import pulsar.passes.utils as utils
 
 static fun isThisLit(expr)
-    return expr is ast.VarLit and expr.id.getLexeme() == THIS_NAME
+    return expr is ast.VarLit and expr.id.getLexeme() == utils.THIS_NAME
 end
 
 class AccessChecker is PassVisitor
@@ -52,7 +28,7 @@ class AccessChecker is PassVisitor
     end
 
     fun visitAttribute(attribute)
-        if isPrivate(attribute.name) and !(this._inClass() and isThisLit(attribute.l)) 
+        if utils.isPrivate(attribute.name) and !(this._inClass() and isThisLit(attribute.l)) 
             this._error("Accessing supposedly private attribute '{0}'" % attribute.name.getLexeme(),
                         attribute.name)
         end
@@ -73,21 +49,19 @@ class AccessChecker is PassVisitor
 
     fun _checkConstantAssign(expr)
         // Don't check for constant assignments in constructors when assigning to `this`
-        if this._inClass() and isCtor(this._currentFunction().name) and
-           isThisLit(expr.l)
+        if this._inClass() and utils.isCtor(this._currentFunction().name) and isThisLit(expr.l)
             return
         end
 
-        var identifier = null
+        var id = null
         if expr is ast.VarLit
-            identifier = expr.id
+            id = expr.id
         elif expr is ast.AttributeExpr
-            identifier = expr.name
+            id = expr.name
         end
 
-        if identifier and isAllCaps(identifier)
-            this._error("Assigning to supposedly constant name {0}" % identifier.getLexeme(),
-                        identifier)
+        if id and utils.isAllCaps(id)
+            this._error("Assigning to supposedly constant name {0}" % id.getLexeme(), id)
         end
     end
 

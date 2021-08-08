@@ -1,0 +1,39 @@
+import pulsar.reporters.reporter for Severity
+import pulsar.reporters.file_reporter for FileReporter
+
+static var prettySeverity = {
+    Severity.ERROR   : "Error",
+    Severity.WARNING : "Warning",
+}
+
+// Error reporter that reports errors to a file, and
+// formats them nicely for visualization by a human.
+class PrettyReporter is FileReporter
+    fun new(file)
+        super(file)
+    end
+
+    fun doFormatError(severity, message, token)
+        var lineStart = token.line()
+        var colStart = token.coloumn() - 1
+        var colEnd = token.coloumnEnd() - 1
+    
+        var src = token.getSource()
+        var line = src.getLine(lineStart)
+
+        var errorBuilder = ["File {0} [line {1}]: " % (src.path, lineStart)]
+        errorBuilder.add(prettySeverity[severity])
+        errorBuilder.add(":\n")
+        errorBuilder.add(line)
+        errorBuilder.add("\n")
+        for var i = 0; i < colStart; i += 1
+            errorBuilder.add("\t" if line.charAt(i) == char("\t") else " ")
+        end
+        errorBuilder.add("^")
+        errorBuilder.add("~" * (colEnd - colStart - 1))
+        errorBuilder.add("\n")
+        errorBuilder.add(message)
+
+        return errorBuilder.join()
+    end
+end

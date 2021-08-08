@@ -2,7 +2,7 @@ import parse.ast as ast
 
 import pulsar.builtins as builtins
 import pulsar.passes.pass_visitor for PassVisitor
-import pulsar.symtable for SymbolTable
+import pulsar.passes.symtable for SymbolTable
 
 // Computes the intersection of two Tables, only considering keys 
 static fun intersect(table1, table2)

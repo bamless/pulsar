@@ -1,9 +1,11 @@
 import io
 
-import pulsar.errors for PrettyReporter, JsonReporter
 import pulsar.opt_parse as opt_parse
 import pulsar.pulsar for Pulsar
+import pulsar.reporters.json_reporter for JsonReporter
+import pulsar.reporters.pretty_reporter for PrettyReporter
 
+// Main function, it implements the CLI.
 fun main(args)
     var parser = opt_parse.OptParser("pulsar [options] [files...]", "A static analyzer for the J* language", [
         opt_parse.Option("out", "o", "Write errors to the specified file", 1, ["file"]),
@@ -21,9 +23,8 @@ fun main(args)
 
     var pulsar = Pulsar(opts)
     var outFile = io.File(opts["out"], "w") if opts["out"] else io.stderr
-    var reporter = JsonReporter(outFile) if opts["json"] else PrettyReporter(outFile)
 
-    try
+    with JsonReporter(outFile) if opts["json"] else PrettyReporter(outFile) reporter
         for var path in files
             try
                 print("Analyzing {0}..." % path)
@@ -38,7 +39,5 @@ fun main(args)
                 io.stderr.writeln("Error {0}: {1}\n" % (path, e.err()))
             end
         end
-    ensure
-        reporter.close()
     end
 end

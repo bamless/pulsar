@@ -1,0 +1,45 @@
+// Strings that have a special meaning in J* source files
+var CTOR_NAME      = "new"
+var THIS_NAME      = "this"
+var DUNDER         = "__"
+var PRIVATE_PREFIX = "_"
+var IGNORE_SUFFIX  = "_"
+
+// Utility function for testing whether the provided token is the contructor name
+fun isCtor(token)
+    return token.getLexeme() == CTOR_NAME
+end
+
+// Utility function for testing whether the token is a `dunder` name
+fun isDunder(token)
+    var lexeme = token.getLexeme()
+    return lexeme.startsWith(DUNDER) and lexeme.endsWith(DUNDER)
+end
+
+// Utility function for testing whether the token is a 'private' name (starts with an underscore)
+fun isPrivate(token)
+    return token.getLexeme().startsWith(PRIVATE_PREFIX) and !isDunder(token)
+end
+
+// Utility function for testing whether the token is an 'ignored' name (ends with an underscore)
+fun isIgnored(token)
+    return token.getLexeme().endsWith(IGNORE_SUFFIX)
+end
+
+// Utility function for testing whether the token's lexeme is all caps
+fun isAllCaps(token)
+    var lexeme = token.getLexeme()
+    var capsEncountered = false
+
+    for var i = 0; i < #lexeme; i += 1
+        var lexChar = lexeme.charAt(i)
+        if !capsEncountered
+            capsEncountered = lexChar >= char("A") and lexChar <= char("Z")
+        end
+        if lexChar >= char("a") and lexChar <= char("z")
+            return false
+        end
+    end
+
+    return capsEncountered
+end

@@ -1,6 +1,5 @@
 import pulsar.reporters.reporter for IReporter, Severity
 
-// Consume an Iterable and return the number of elements contained in it
 static fun count(iterable)
     return iterable.reduce(0, |count, _| => count + 1)
 end

@@ -1,7 +1,7 @@
 import pulsar.reporters.reporter for Severity
 import pulsar.reporters.file_reporter for FileReporter
 
-static var severityJson = {
+static var jsonSeverity = {
     Severity.ERROR   : '"error"',
     Severity.WARNING : '"warning"',
 }
@@ -11,7 +11,7 @@ static var severityJson = {
 class JsonReporter is FileReporter
     fun doFormatError(severity, message, token)
         return ##{
-            '"severity"' : severityJson[severity],
+            '"severity"' : jsonSeverity[severity],
             '"path"'     : '"{0}"' % token.getSource().path,
             '"start"'    : token.start(),
             '"end"'      : token.start() + token.length(),

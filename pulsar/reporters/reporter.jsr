@@ -1,8 +1,5 @@
 // Enum of all available error severities
-var Severity = Enum(
-    "WARNING",
-    "ERROR"
-)
+var Severity = Enum("WARNING", "ERROR")
 
 // Error reporter interface.
 // `reportError` will be called by the various error checking passes upon encountering a problem.

@@ -144,8 +144,6 @@ class VariableResolver is PassVisitor
     end
 
     fun visitVar(varDecl)
-        super(varDecl)
-
         var variables = []
         for var name in varDecl.names
             if varDecl.isStatic()
@@ -153,6 +151,8 @@ class VariableResolver is PassVisitor
             end
             variables.add(this._define(name, false))
         end
+
+        super(varDecl)
 
         if varDecl.init != null
             for var variable in variables

@@ -61,7 +61,7 @@ class AccessChecker is PassVisitor
         end
 
         if id and utils.isAllCaps(id)
-            this._error("Assigning to supposedly constant name {0}" % id.getLexeme(), id)
+            this._error("Assigning to supposedly constant name '{0}'" % id.getLexeme(), id)
         end
     end
 

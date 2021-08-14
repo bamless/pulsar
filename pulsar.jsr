@@ -1,6 +1,4 @@
 #!/usr/bin/env jstar
 
-// Launcher script for the Pulsar static analyzer
 import pulsar
-
 pulsar.main(argv)

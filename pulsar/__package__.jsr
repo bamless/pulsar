@@ -31,8 +31,9 @@ fun main(args)
 
     var pulsar = Pulsar(opts)
     var outFile = io.File(opts["out"], "w") if opts["out"] else io.stderr
+    var reporter = JsonReporter(outFile) if opts["json"] else PrettyReporter(outFile)
 
-    with JsonReporter(outFile) if opts["json"] else PrettyReporter(outFile) reporter
+    try
         for var path in files
             try
                 print("Analyzing {0}..." % path)
@@ -47,5 +48,7 @@ fun main(args)
                 io.stderr.writeln("Error {0}: {1}\n" % (path, e.err()))
             end
         end
+    ensure
+        reporter.close()
     end
 end

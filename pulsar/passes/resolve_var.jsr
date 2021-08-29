@@ -69,6 +69,7 @@ class VariableResolver is PassVisitor
         return this._exitScope()
     end
 
+    // Propagate variable initialization state (usually from inner scopes) into the current scope
     fun _propagateInitialization(initializedVars)
         if !initializedVars return end
         for var variable in initializedVars
@@ -281,15 +282,19 @@ class VariableResolver is PassVisitor
         assign.r.accept(this)
 
         if assign.l is ast.TupleLit
-            for var lhs in assign.l.expressions
-                if lhs is ast.VarLit
-                    var variable = this._lookupVariable(lhs.id)
-                    this._setInitialized(variable)
+            for var lval in assign.l.expressions
+                if lval is ast.VarLit
+                    var variable = this._lookupVariable(lval.id)
+                    if variable
+                        this._setInitialized(variable)
+                    end
                 end
             end
         elif assign.l is ast.VarLit
             var variable = this._lookupVariable(assign.l.id)
-            this._setInitialized(variable)
+            if variable
+                this._setInitialized(variable)
+            end
         end
 
         assign.l.accept(this)
@@ -302,6 +307,10 @@ class VariableResolver is PassVisitor
     fun visitFuncLit(funcLit)
         this._visitFuncBody(funcLit)
     end
+
+    // -----------------------------------------------------------------------------
+    // SCOPE MANAGEMENT AND VARIABLE RESOLUTION
+    // -----------------------------------------------------------------------------
 
     fun _enterFunction()
         this._enterScope()
@@ -346,7 +355,6 @@ class VariableResolver is PassVisitor
     end
 
     fun _setInitialized(variable)
-        if !variable return end
         this._initializedVars.insert(variable, true)
     end
 
@@ -369,10 +377,6 @@ class VariableResolver is PassVisitor
             this._resolve(token)
         end
     end
-
-    // -----------------------------------------------------------------------------
-    // UTILITY METHODS
-    // -----------------------------------------------------------------------------
 
     fun _inMainFunc()
         return this._functionDepth == 0

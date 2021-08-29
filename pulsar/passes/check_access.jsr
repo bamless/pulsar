@@ -8,6 +8,10 @@ static fun isThisLit(expr)
     return expr is ast.VarLit and expr.id.getLexeme() == utils.THIS_NAME
 end
 
+static fun isInstanceAttribute(expr)
+    return expr is ast.AttributeExpr and isThisLit(expr.l)
+end
+
 class AccessChecker is PassVisitor
     fun new(reporter)
         super(reporter)
@@ -37,31 +41,32 @@ class AccessChecker is PassVisitor
 
     fun visitAssignment(assign)
         if assign.l is ast.TupleLit
-            for var lhs in assign.l.expressions
-                this._checkConstantAssign(lhs)
+            for var lval in assign.l.expressions
+                this._detectConstantAssign(lval)
             end
         else
-            this._checkConstantAssign(assign.l)
+            this._detectConstantAssign(assign.l)
         end
 
         super(assign)
     end
 
-    fun _checkConstantAssign(expr)
+    fun _detectConstantAssign(lval)
         // Don't check for constant assignments in constructors when assigning to `this`
-        if this._inClass() and utils.isCtor(this._currentFunction().name) and isThisLit(expr.l)
+        if this._inClass() and utils.isCtor(this._currentFunction().name) and 
+           isInstanceAttribute(lval)
             return
         end
 
-        var id = null
-        if expr is ast.VarLit
-            id = expr.id
-        elif expr is ast.AttributeExpr
-            id = expr.name
+        var name = null
+        if lval is ast.VarLit
+            name = lval.id
+        elif lval is ast.AttributeExpr
+            name = lval.name
         end
 
-        if id and utils.isAllCaps(id)
-            this._error("Assigning to supposedly constant name '{0}'" % id.getLexeme(), id)
+        if name and utils.isConstant(name)
+            this._error("Assigning to supposedly constant name '{0}'" % name.getLexeme(), name)
         end
     end
 

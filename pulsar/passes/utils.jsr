@@ -16,18 +16,18 @@ fun isDunder(token)
     return lexeme.startsWith(DUNDER) and lexeme.endsWith(DUNDER)
 end
 
-// Utility function for testing whether the token is a 'private' name (starts with an underscore)
+// Utility function for testing whether the token is meant to be a private name
 fun isPrivate(token)
     return token.getLexeme().startsWith(PRIVATE_PREFIX) and !isDunder(token)
 end
 
-// Utility function for testing whether the token is an 'ignored' name (ends with an underscore)
+// Utility function for testing if a token should be ignored in variable analisys passes
 fun isIgnored(token)
     return token.getLexeme().endsWith(IGNORE_SUFFIX)
 end
 
-// Utility function for testing whether the token's lexeme is all caps
-fun isAllCaps(token)
+// Utility function for testing whether the token is meant to be a constant name
+fun isConstant(token)
     var lexeme = token.getLexeme()
     var capsEncountered = false
 

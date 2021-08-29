@@ -7,11 +7,7 @@ import pulsar.passes.symtable for SymbolTable
 // Computes the intersection of two Tables, only considering keys 
 static fun intersect(table1, table2)
     var res = {}
-    for var key in table1
-        if table2.contains(key)
-            res[key] = true
-        end
-    end
+    table1.filter(|key| => table2.contains(key)).forEach(|key| => res[key] = true)
     return res
 end
 

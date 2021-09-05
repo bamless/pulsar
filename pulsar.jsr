@@ -1,4 +1,5 @@
 #!/usr/bin/env jstar
 
 import pulsar
+
 pulsar.main(argv)

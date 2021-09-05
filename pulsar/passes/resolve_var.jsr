@@ -7,7 +7,11 @@ import pulsar.passes.symtable for SymbolTable
 // Computes the intersection of two Tables, only considering keys 
 static fun intersect(table1, table2)
     var res = {}
-    table1.filter(|key| => table2.contains(key)).forEach(|key| => res[key] = true)
+    for var key in table1
+        if table2.contains(key)
+            res[key] = true
+        end
+    end
     return res
 end
 
@@ -20,8 +24,7 @@ static class Variable
     end
 
     fun __eq__(o)
-        if type(o) != type(this) return false end
-        return this.scope == o.scope and this.name == o.name
+        return type(o) == type(this) and this.scope == o.scope and this.name == o.name
     end
 
     fun __hash__()
@@ -37,8 +40,8 @@ class VariableResolver is PassVisitor
     fun new(reporter, ignoreGlobalRedef=false)
         super(reporter)
         this._ignoreGlobalRedef = ignoreGlobalRedef
-        this._variables = SymbolTable()
-        this._initializedVars = SymbolTable()
+        this._scopes = SymbolTable()
+        this._initialized = SymbolTable()
         this._functionDepth = 0
         this._fwdRefs = []
     end
@@ -57,18 +60,6 @@ class VariableResolver is PassVisitor
         this._exitScope()
     end
 
-    // Visits a block and returns a Table containing the variables initialized in it
-    fun visitBlock(block)
-        this._enterScope()
-
-        for var stmt in block.statements
-            var initialized = stmt.accept(this)
-            this._propagateInitialization(initialized)
-        end
-
-        return this._exitScope()
-    end
-
     // Propagate variable initialization state (usually from inner scopes) into the current scope
     fun _propagateInitialization(initializedVars)
         if !initializedVars return end
@@ -85,7 +76,7 @@ class VariableResolver is PassVisitor
 
     fun visitFunc(func)
         if func.isStatic()
-            this._checkStaticUsage(func.name)
+            this._checkStaticDecl(func.name)
         end
         this._define(func.name, true)
         this._visitFuncBody(func)
@@ -93,7 +84,7 @@ class VariableResolver is PassVisitor
 
     fun visitClass(cls)
         if cls.isStatic()
-            this._checkStaticUsage(cls.name)
+            this._checkStaticDecl(cls.name)
         end
 
         this._define(cls.name, true)
@@ -134,7 +125,7 @@ class VariableResolver is PassVisitor
 
     fun visitNative(nat)
         if nat.isStatic()
-            this._checkStaticUsage(nat.name)
+            this._checkStaticDecl(nat.name)
         end
         this._define(nat.name, true)
         super(nat)
@@ -144,7 +135,7 @@ class VariableResolver is PassVisitor
         var variables = []
         for var name in varDecl.names
             if varDecl.isStatic()
-                this._checkStaticUsage(name)
+                this._checkStaticDecl(name)
             end
             variables.add(this._define(name, false))
         end
@@ -158,7 +149,7 @@ class VariableResolver is PassVisitor
         end
     end
 
-    fun _checkStaticUsage(token)
+    fun _checkStaticDecl(token)
         if !this._inGlobalScope() return end
 
         var name = token.getLexeme()
@@ -173,6 +164,18 @@ class VariableResolver is PassVisitor
     // -----------------------------------------------------------------------------
     // STATEMENTS
     // -----------------------------------------------------------------------------
+
+    // Visits a block and returns a Table containing the variables initialized in it
+    fun visitBlock(block)
+        this._enterScope()
+
+        for var stmt in block.statements
+            var initialized = stmt.accept(this)
+            this._propagateInitialization(initialized)
+        end
+
+        return this._exitScope()
+    end
 
     // Visits an `if` statement and retuns variables initialized in both branches
     fun visitIf(ifStmt)
@@ -240,7 +243,7 @@ class VariableResolver is PassVisitor
 
         forEach.variable.accept(this)
         for var id in forEach.variable.names
-            var variable = this._lookupVariable(id)
+            var variable = this._lookup(id)
             this._setInitialized(variable)
         end
 
@@ -284,14 +287,14 @@ class VariableResolver is PassVisitor
         if assign.l is ast.TupleLit
             for var lval in assign.l.expressions
                 if lval is ast.VarLit
-                    var variable = this._lookupVariable(lval.id)
+                    var variable = this._lookup(lval.id)
                     if variable
                         this._setInitialized(variable)
                     end
                 end
             end
         elif assign.l is ast.VarLit
-            var variable = this._lookupVariable(assign.l.id)
+            var variable = this._lookup(assign.l.id)
             if variable
                 this._setInitialized(variable)
             end
@@ -323,45 +326,53 @@ class VariableResolver is PassVisitor
     end
 
     fun _enterScope()
-        this._variables.enterScope()
-        this._initializedVars.enterScope()
+        this._scopes.enterScope()
+        this._initialized.enterScope()
     end
 
     fun _exitScope()
-        this._variables.exitScope()
-        return this._initializedVars.exitScope()
-    end
-
-    fun _lookupVariable(token)
-        return this._variables.lookup(token.getLexeme())
-    end
-
-    fun _define(token, init)
-        var prevDecl = this._variables.lookupAt(token.getLexeme(), -1)
-        if !prevDecl or this._ignoreGlobalRedef and this._inGlobalScope()
-            return this._defineName(token.getLexeme(), token.line(), this._getCurScope(), init)
-        else
-            this._error("Name '{0}' already declared, previous declaration at line {1}" %
-                        (prevDecl.name, prevDecl.line), token)
-            return null
-        end
-    end
-
-    fun _defineName(name, line, scope, init)
-        var variable = Variable(name, line, scope)
-        this._variables.insert(name, variable)
-        if init this._setInitialized(variable) end
-        return variable
+        this._scopes.exitScope()
+        return this._initialized.exitScope()
     end
 
     fun _setInitialized(variable)
-        this._initializedVars.insert(variable, true)
+        this._initialized.insert(variable, true)
+    end
+
+    fun _isInitialized(variable)
+        return this._initialized.lookup(variable)
+    end
+
+    fun _define(token, init)
+        var variable = this._scopes.lookupAt(token.getLexeme(), -1)
+
+        if variable and !(this._ignoreGlobalRedef and this._inGlobalScope())
+            this._error("Name '{0}' already declared, previous declaration at line {1}" %
+                        (variable.name, variable.line), token)
+            return null
+        end
+        
+        return this._defineName(token.getLexeme(), token.line(), this._getCurScope(), init)
+    end
+
+    fun _defineName(name, line, scope, initialized)
+        var variable = Variable(name, line, scope)
+        this._scopes.insert(name, variable)
+        if initialized
+            this._setInitialized(variable)
+        end
+        return variable
+    end
+
+    fun _lookup(token)
+        return this._scopes.lookup(token.getLexeme())
     end
 
     fun _resolve(token)
-        var variable = this._lookupVariable(token)
+        var variable = this._lookup(token)
+
         if variable
-            if !this._initializedVars.lookup(variable)
+            if !this._isInitialized(variable)
                 this._warn("Variable '{0}' (declared at line {1}) may be uninitialized" %
                             (variable.name, variable.line), token)
             end
@@ -383,10 +394,10 @@ class VariableResolver is PassVisitor
     end
 
     fun _inGlobalScope()
-        return #this._variables == 1
+        return #this._scopes == 1
     end
 
     fun _getCurScope()
-        return #this._variables - 1
+        return #this._scopes - 1
     end
 end

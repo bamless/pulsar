@@ -1,5 +1,3 @@
-var VERSION = (0, 0, 5)
-
 import io
 import sys
 
@@ -7,6 +5,8 @@ import pulsar.opt_parse as opt_parse
 import pulsar.pulsar for Pulsar
 import pulsar.reporters.json_reporter for JsonReporter
 import pulsar.reporters.pretty_reporter for PrettyReporter
+
+var VERSION = (0, 0, 5)
 
 fun main(args)
     var parser = opt_parse.OptParser("pulsar [options] [files...]", "A static analyzer for the J* language", [

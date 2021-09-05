@@ -100,29 +100,6 @@ class VariableResolver is PassVisitor
         end
     end
 
-    fun _visitFuncBody(func, isMethod=false)
-        this._enterFunction()
-
-        if isMethod
-            this._defineName('this', func.funTok.line(), this._getCurScope(), true)
-        end
-
-        if func.vararg
-            this._defineName('args', func.funTok.line(), this._getCurScope(), true)
-        end
-
-        for var arg in func.arguments
-            this._define(arg, true)
-        end
-
-        for var stmt in func.body.statements
-            var initialized = stmt.accept(this)
-            this._propagateInitialization(initialized)
-        end
-
-        this._exitFunction()
-    end
-
     fun visitNative(nat)
         if nat.isStatic()
             this._checkStaticDecl(nat.name)
@@ -147,6 +124,29 @@ class VariableResolver is PassVisitor
                 this._setInitialized(variable)
             end
         end
+    end
+
+    fun _visitFuncBody(func, isMethod=false)
+        this._enterFunction()
+
+        if isMethod
+            this._defineName('this', func.funTok.line(), this._getCurScope(), true)
+        end
+
+        if func.vararg
+            this._defineName('args', func.funTok.line(), this._getCurScope(), true)
+        end
+
+        for var arg in func.arguments
+            this._define(arg, true)
+        end
+
+        for var stmt in func.body.statements
+            var initialized = stmt.accept(this)
+            this._propagateInitialization(initialized)
+        end
+
+        this._exitFunction()
     end
 
     fun _checkStaticDecl(token)

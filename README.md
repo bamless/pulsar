@@ -3,8 +3,8 @@
 Pulsar is a static analyzer and linter for the [J*](https://github.com/bamless/jstar) language
 written in **J\***.
 
-It can be used either as a standalone application or through  Visual Studio Code via the 
-[extension](https://marketplace.visualstudio.com/items?itemName=bamless.vsc-jstar-extension&utm_source=VSCode.pro&utm_campaign=AhmadAwais)
+It can be used either as a standalone application, or through  Visual Studio Code via the 
+[extension](https://marketplace.visualstudio.com/items?itemName=bamless.vsc-jstar-extension&utm_source=VSCode.pro&utm_campaign=AhmadAwais).
 
 ## Supported features
 

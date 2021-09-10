@@ -3,6 +3,9 @@
 Pulsar is a static analyzer and linter for the [J*](https://github.com/bamless/jstar) language
 written in **J\***.
 
+It can be used either as a standalone application or through  Visual Studio Code via the 
+[extension](https://marketplace.visualstudio.com/items?itemName=bamless.vsc-jstar-extension&utm_source=VSCode.pro&utm_campaign=AhmadAwais)
+
 ## Supported features
 
 The analysis of source files is broken down into multiple passes each reporting a specific class of
@@ -213,10 +216,6 @@ PI = 3.15
 ^~
 Assigning to supposedly constant name PI
 ```
-
-## IDE Integration
-
-Pulsar has been integrated in Visual Studio Code, you can download the extension from [here](https://marketplace.visualstudio.com/items?itemName=bamless.vsc-jstar-extension&utm_source=VSCode.pro&utm_campaign=AhmadAwais)
 
 ## How to use
 

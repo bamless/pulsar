@@ -9,10 +9,6 @@ static var prettySeverity = {
 // Error reporter that reports errors to a file, and
 // formats them nicely for visualization by a human.
 class PrettyReporter is FileReporter
-    fun new(file)
-        super(file)
-    end
-
     fun doFormatError(severity, message, token)
         var lineStart = token.line()
         var colStart = token.coloumn() - 1

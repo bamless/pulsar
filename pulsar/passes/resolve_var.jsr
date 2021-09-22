@@ -28,7 +28,7 @@ static class Variable
     end
 
     fun __hash__()
-        return (this.name.__hash__() + this.scope.__hash__()) & 0xfffffffe
+        return (this.name.__hash__() + this.scope.__hash__()) & 0xffffffff
     end
 end
 

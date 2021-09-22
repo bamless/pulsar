@@ -2,12 +2,16 @@
 class Node 
     // Accepts a `visitor`
     // Should call the appropriate method on `visitor` to visit this node
-    fun accept(visitor_) raise NotImplementedException() end
+    fun accept(visitor_)
+        raise NotImplementedException()
+    end
 
     // Returns the "represantative token" of this node
     // Usually it's the first token of this node, or the representative token of the first node
     // contained in this one, if it only contains other nodes
-    fun representativeToken() raise NotImplementedException() end
+    fun representativeToken()
+        raise NotImplementedException()
+    end
 end
 
 class Stmt is Node end

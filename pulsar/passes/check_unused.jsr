@@ -131,6 +131,22 @@ class UnusedChecker is PassVisitor
         end
     end
 
+    fun visitAssignment(assign)
+        assign.r.accept(this)
+
+        // Assignment to a variable literal doesn't count as usage
+        var lval = assign.l
+        if lval is ast.TupleLit
+            for var l in lval.expressions
+                if !(l is ast.VarLit)
+                    l.accept(this)
+                end
+            end
+        elif !(lval is ast.VarLit)
+            lval.accept(this)
+        end
+    end
+
     fun visitVarLit(varLit)
         var name = varLit.id.getLexeme()
         if utils.isIgnored(varLit.id) and !utils.isDunder(varLit.id)

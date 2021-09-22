@@ -79,7 +79,7 @@ class VariableResolver is PassVisitor
             this._checkStaticDecl(func.name)
         end
         this._define(func.name, true)
-        this._visitFuncBody(func)
+        this._visitFunction(func)
     end
 
     fun visitClass(cls)
@@ -95,7 +95,7 @@ class VariableResolver is PassVisitor
 
         for var meth in cls.methods
             if meth is ast.FuncDecl
-                this._visitFuncBody(meth, true)
+                this._visitFunction(meth, true)
             end
         end
     end
@@ -126,7 +126,7 @@ class VariableResolver is PassVisitor
         end
     end
 
-    fun _visitFuncBody(func, isMethod=false)
+    fun _visitFunction(func, isMethod=false)
         this._enterFunction()
 
         if isMethod
@@ -287,20 +287,21 @@ class VariableResolver is PassVisitor
         if assign.l is ast.TupleLit
             for var lval in assign.l.expressions
                 if lval is ast.VarLit
-                    var variable = this._lookup(lval.id)
-                    if variable
-                        this._setInitialized(variable)
-                    end
+                    this._initializeVarLit(lval)
                 end
             end
         elif assign.l is ast.VarLit
-            var variable = this._lookup(assign.l.id)
-            if variable
-                this._setInitialized(variable)
-            end
+            this._initializeVarLit(assign.l)
         end
 
         assign.l.accept(this)
+    end
+
+    fun _initializeVarLit(varLit)
+        var variable = this._lookup(varLit.id)
+        if variable
+            this._setInitialized(variable)
+        end
     end
 
     fun visitVarLit(varLit)
@@ -308,7 +309,7 @@ class VariableResolver is PassVisitor
     end
 
     fun visitFuncLit(funcLit)
-        this._visitFuncBody(funcLit)
+        this._visitFunction(funcLit)
     end
 
     // -----------------------------------------------------------------------------
@@ -355,10 +356,10 @@ class VariableResolver is PassVisitor
         return this._defineName(token.getLexeme(), token.line(), this._getCurScope(), init)
     end
 
-    fun _defineName(name, line, scope, initialized)
+    fun _defineName(name, line, scope, initialize)
         var variable = Variable(name, line, scope)
         this._scopes.insert(name, variable)
-        if initialized
+        if initialize
             this._setInitialized(variable)
         end
         return variable

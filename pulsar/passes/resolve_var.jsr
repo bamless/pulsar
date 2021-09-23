@@ -283,7 +283,7 @@ class VariableResolver is PassVisitor
     fun visitAssignment(assign)
         assign.rval.accept(this)
 
-        // Set all variables ion the assignment as initialized
+        // Set all variables in the assignment as initialized
         for var varLit in assign.lvals.filter(|lval| => lval is ast.VarLit)
             var variable = this._lookup(varLit.id)
             if variable

@@ -93,10 +93,9 @@ class VariableResolver is PassVisitor
             cls.superClass.accept(this)
         end
 
-        for var meth in cls.methods
-            if meth is ast.FuncDecl
-                this._visitFunction(meth, true)
-            end
+        // We don't care about natives
+        for var meth in cls.methods.filter(|e| => e is ast.FuncDecl)
+            this._visitFunction(meth, true)
         end
     end
 

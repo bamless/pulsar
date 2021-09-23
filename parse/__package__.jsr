@@ -1,2 +1,2 @@
-// The parser version follows the J* version (Only major and minor) it ca parse
+// The parser version follows the J* version (Only major and minor) it can parse
 var VERSION = (1, 8, 0)

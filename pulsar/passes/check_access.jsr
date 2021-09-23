@@ -40,14 +40,9 @@ class AccessChecker is PassVisitor
     end
 
     fun visitAssignment(assign)
-        if assign.l is ast.TupleLit
-            for var lval in assign.l.expressions
-                this._detectConstantAssign(lval)
-            end
-        else
-            this._detectConstantAssign(assign.l)
+        for var lval in assign.lvals
+            this._detectConstantAssign(lval)
         end
-
         super(assign)
     end
 

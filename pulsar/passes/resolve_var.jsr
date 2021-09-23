@@ -282,25 +282,17 @@ class VariableResolver is PassVisitor
     // -----------------------------------------------------------------------------
 
     fun visitAssignment(assign)
-        assign.r.accept(this)
+        assign.rval.accept(this)
 
-        if assign.l is ast.TupleLit
-            for var lval in assign.l.expressions
-                if lval is ast.VarLit
-                    this._initializeVarLit(lval)
-                end
+        for var varLit in assign.lvals.filter(|lval| => lval is ast.VarLit)
+            var variable = this._lookup(varLit.id)
+            if variable
+                this._setInitialized(variable)
             end
-        elif assign.l is ast.VarLit
-            this._initializeVarLit(assign.l)
         end
 
-        assign.l.accept(this)
-    end
-
-    fun _initializeVarLit(varLit)
-        var variable = this._lookup(varLit.id)
-        if variable
-            this._setInitialized(variable)
+        for var lval in assign.lvals
+            lval.accept(this)
         end
     end
 

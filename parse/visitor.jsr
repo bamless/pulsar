@@ -102,13 +102,15 @@ class Visitor
     fun visitContinue(continueStmt_) end
 
     fun visitAssignment(assignment)
-        assignment.l.accept(this)
-        assignment.r.accept(this)
+        for var lval in assignment.lvals
+            lval.accept(this)
+        end
+        assignment.rval.accept(this)
     end
 
     fun visitCompoundAss(compound)
-        compound.l.accept(this)
-        compound.r.accept(this)
+        compound.lval.accept(this)
+        compound.rval.accept(this)
     end
 
     fun visitBinary(binary)

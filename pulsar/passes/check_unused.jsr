@@ -8,8 +8,9 @@ import pulsar.passes.utils as utils
 class UnusedChecker is PassVisitor
     fun new(reporter, ignoreUnusedArg=false)
         super(reporter)
-        this._ignoreUnusedArg = ignoreUnusedArg
+        // Symbol table of Identifier -> boolean (usage status)
         this._variables = SymbolTable()
+        this._ignoreUnusedArg = ignoreUnusedArg
     end
 
     fun visitModule(module)
@@ -132,26 +133,21 @@ class UnusedChecker is PassVisitor
     end
 
     fun visitAssignment(assign)
-        assign.r.accept(this)
+        assign.rval.accept(this)
 
-        // Assignment to a variable literal doesn't count as usage
-        var lval = assign.l
-        if lval is ast.TupleLit
-            for var l in lval.expressions
-                if !(l is ast.VarLit)
-                    l.accept(this)
-                end
-            end
-        elif !(lval is ast.VarLit)
+        // Assignment to a variable literal doesn't count as usage, so skip them
+        for var lval in assign.lvals.filter(|e| => !(e is ast.VarLit))
             lval.accept(this)
         end
     end
 
     fun visitVarLit(varLit)
-        var name = varLit.id.getLexeme()
-        if utils.isIgnored(varLit.id) and !utils.isDunder(varLit.id)
-            this._warn("Name '{0}' not ignored as it ought to be" % name, varLit.id)
+        var found = this._variables.lookup(varLit.id) != null
+   
+        if found and utils.isIgnored(varLit.id) and !utils.isDunder(varLit.id)
+            this._warn("Name '{0}' not ignored as it ought to be" % varLit.id.getLexeme(), varLit.id)
         end
+
         this._setUsed(varLit.id)
     end
 

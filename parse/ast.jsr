@@ -334,8 +334,10 @@ class ContinueStmt is Stmt
 end
 
 class AssignmentExpr is Expr
-    fun new(l, equal, r)
-        this.l, this.equal, this.r = l, equal, r
+    fun new(lvals, equal, rval)
+        this.lvals = lvals
+        this.equal = equal
+        this.rval = rval
     end
 
     fun accept(visitor)
@@ -348,8 +350,10 @@ class AssignmentExpr is Expr
 end
 
 class CompoundAssExpr is Expr
-    fun new(l, op, r)
-        this.l, this.op, this.r = l, op, r
+    fun new(lval, op, rval)
+        this.lval = lval
+        this.op = op
+        this.rval = rval
     end
 
     fun accept(visitor)

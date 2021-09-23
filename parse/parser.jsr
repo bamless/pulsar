@@ -602,24 +602,27 @@ class Parser
     end
 
     fun _expression(parseTuple=true)
-        var l = this._tupleLit() if parseTuple else this._funLit();
+        var expr = this._tupleLit() if parseTuple else this._funLit()
 
         if isAssignment(this._curr)
-            l = this._assignExpr(l, parseTuple);
+            expr = this._assignExpr(expr, parseTuple);
         end
 
-        return l
+        return expr
     end
 
-    fun _assignExpr(l, parseTuple)
-        this._checkLvalue(l)
+    fun _assignExpr(lval, parseTuple)
+        this._checkLvalue(lval)
+
         var assignTok = this._advance()
-        var r = this._expression(parseTuple)
+        var rval = this._expression(parseTuple)
 
         if COMPOUND_ASSIGN_OP[assignTok.type]
-            return ast.CompoundAssExpr(l, assignTok, r)
+            return ast.CompoundAssExpr(lval, assignTok, rval)
         else
-            return ast.AssignmentExpr(l, assignTok, r)
+            // Expand lvalues in case of an unpack assignment
+            var lvals = lval.expressions if lval is ast.TupleLit else [lval]
+            return ast.AssignmentExpr(lvals, assignTok, rval)
         end
     end
 

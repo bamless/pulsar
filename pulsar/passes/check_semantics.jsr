@@ -124,8 +124,8 @@ class SemanticChecker is PassVisitor
     end
 
     fun visitAssignment(assign)
-        if assign.l is ast.TupleLit
-            this._checkUnpack(assign.equal, #assign.l.expressions, assign.r)
+        if #assign.lvals > 1
+            this._checkUnpack(assign.equal, #assign.lvals, assign.rval)
         end
         super(assign)
     end

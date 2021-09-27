@@ -1,13 +1,3 @@
-// Human readable names of the `Type` enum
-var TypeNames = [
-    "(", ")", "[", "]", "{", "}", "!", "!=", ",", ".", "...", "=>", "=", "+=", "-=", "/=", "*=",
-    "%=", "==", ">", ">=", "<", "<=", "<<", ">>", "+", "-", "/", "*", "%", "^", "#", "##", "&", "~",
-    ":", "|", ";", "in", "begin", "end", "<identifier>", "<string>", "<number>", "and", "class",
-    "else", "false", "native", "fun", "for", "if", "elif", "null", "or", "return", "import", "as",
-    "is", "super", "true", "var", "static", "while", "continue", "break", "try", "except", "ensure",
-    "raise", "with", "<unterminated string>", "<newline>", "<error>", "<end of file>"
-]
-
 // Enumeration encoding different types of token
 var Type = Enum(
     "LPAREN",

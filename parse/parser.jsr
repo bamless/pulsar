@@ -1,6 +1,7 @@
 import parse.ast as ast
 import parse.lexer for Lexer
-import parse.token for Token, Type, TypeNames
+import parse.token for Token, Type
+import parse.token_name for TokenName
 import parse.source for SourceFile
 
 static var OR_OP = {
@@ -948,9 +949,8 @@ class Parser
         if this._match(type)
             return this._advance()
         end
-
         this._error("Expected token `{0}`, instead got `{1}`" %
-                    (TypeNames[type], TypeNames[this._curr.type]))
+                    (TokenName[type], TokenName[this._curr.type]))
         return Token(this._source, Type.ERR, #this._source, 0)
     end
 

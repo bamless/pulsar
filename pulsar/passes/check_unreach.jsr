@@ -13,8 +13,8 @@ class UnreachableCodeChecker is PassVisitor
                 // If control is interrupted by the statement, and we're 
                 // not on the last instruction, report unreachable code
                 if n != #block.statements - 1
-                    this._warn("Unreachable statement, previous statement breaks control unconditionally", 
-                               block.statements[n + 1].representativeToken())
+                    this._warn("Unreachable statement, previous statement breaks control " +
+                               "unconditionally", block.statements[n + 1].representativeToken())
                 end
                 return true // Propragate interruption of control flow
             end

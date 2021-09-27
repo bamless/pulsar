@@ -8,7 +8,7 @@ import pulsar.passes.utils as utils
 class UnusedChecker is PassVisitor
     fun new(reporter, ignoreUnusedArg=false)
         super(reporter)
-        this._variables = SymbolTable()  // Symbol table of Identifier -> boolean (usage status)
+        this._variables = SymbolTable()  // Symbol table of Identifier -> Boolean (usage status)
         this._ignoreUnusedArg = ignoreUnusedArg
     end
 

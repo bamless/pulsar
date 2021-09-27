@@ -39,8 +39,8 @@ end
 class VariableResolver is PassVisitor
     fun new(reporter, ignoreGlobalRedef=false)
         super(reporter)
-        this._scopes = SymbolTable()       // Symboltable String (var name) -> Variable
-        this._initialized = SymbolTable()  // Symboltalbe Variable -> bool (init status)
+        this._scopes = SymbolTable()       // Symboltable String (variable name) -> Variable
+        this._initialized = SymbolTable()  // Symboltalbe Variable -> Boolean (init status)
         this._ignoreGlobalRedef = ignoreGlobalRedef
         this._functionDepth = 0
         this._fwdRefs = []

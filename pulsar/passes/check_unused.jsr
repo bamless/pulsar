@@ -3,7 +3,7 @@ import parse.ast as ast
 import pulsar.builtins as builtins
 import pulsar.passes.pass_visitor for PassVisitor
 import pulsar.passes.symtable for SymbolTable
-import pulsar.passes.utils as utils
+import pulsar.passes.token_utils as token_utils
 
 class UnusedChecker is PassVisitor
     fun new(reporter, ignoreUnusedArg=false)
@@ -143,7 +143,7 @@ class UnusedChecker is PassVisitor
     fun visitVarLit(varLit)
         var found = this._variables.lookup(varLit.id) != null
    
-        if found and utils.isIgnored(varLit.id) and !utils.isDunder(varLit.id)
+        if found and token_utils.isIgnored(varLit.id) and !token_utils.isDunder(varLit.id)
             this._warn("Name '{0}' not ignored as it ought to be" % varLit.id.getLexeme(), varLit.id)
         end
 
@@ -157,7 +157,7 @@ class UnusedChecker is PassVisitor
     fun _exitScope()
         var used = this._variables.getScope(-1)
         for var token in used
-            if !used[token] and !utils.isIgnored(token)
+            if !used[token] and !token_utils.isIgnored(token)
                 this._warn("Name '{0}' declared but not used" % token.getLexeme(), token)
             end
         end

@@ -20,9 +20,14 @@ static fun cacheBuiltin(name, path)
         return false
     end
 
-    var parser = Parser(src, fun(msg_, tok_) end)
+    var parser = Parser(src, fun(msg, tok) 
+        io.stderr.writeln("line {1}: {0}" % (msg, tok.line()))
+    end)
+
     var ast = parser.parse()
-    if !ast return false end
+    if !ast
+        return false
+    end
 
     builtinCache[name] = ast
     return true
@@ -35,7 +40,10 @@ for var moduleName in BUILTIN_NAMES
     if !cached
         for var path in importPaths
             cached = cacheBuiltin(moduleName, "{0}/{1}/{2}" % (path, BUILTIN_STORAGE, storageName))
-            if cached break end
+
+            if cached
+                break
+            end
         end
     end
     

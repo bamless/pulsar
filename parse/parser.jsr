@@ -632,11 +632,15 @@ class Parser
 
         if this._match(Type.COMMA)
             var expressions = [e]
+
             while this._match(Type.COMMA)
                 this._advance()
-                if !EXPRESSION_START[this._curr.type] break end
+                if !EXPRESSION_START[this._curr.type]
+                    break
+                end
                 expressions.add(this._funLit())
             end
+
             e = ast.TupleLit(expressions)
         end
 
@@ -764,27 +768,14 @@ class Parser
                 var table = this._literal()
                 lit = ast.CallExpr(lit, table.leftBracket, [table], table.rightBracket)
             elif this._match(Type.LPAREN)
-                var leftBracket = this._advance()
-                this._skipNewLines()
+                var leftBracket, exprs, rightBracket = this._exprList(Type.LPAREN, Type.RPAREN)
 
-                var expressions = []
-                while !this._match(Type.RPAREN)
-                    expressions.add(this._expression(false))
-                    this._skipNewLines()
-                    if !this._match(Type.COMMA) break end
+                var isUnpack = this._match(Type.VARARG)
+                if isUnpack
                     this._advance()
-                    this._skipNewLines()
                 end
 
-                var rightBracket = this._require(Type.RPAREN)
-
-                var isUnpack = false
-                if this._match(Type.VARARG)
-                    this._advance()
-                    isUnpack = true
-                end
-
-                lit = ast.CallExpr(lit, leftBracket, expressions, rightBracket, isUnpack)
+                lit = ast.CallExpr(lit, leftBracket, exprs, rightBracket, isUnpack)
             elif this._match(Type.LSQUARE)
                 var leftBracket = this._advance()
                 this._skipNewLines()
@@ -843,20 +834,7 @@ class Parser
     end
 
     fun _listExpr()
-        var leftBracket = this._advance()
-        this._skipNewLines()
-
-        var elements = []
-        while !this._match(Type.RSQUARE)
-            elements.add(this._expression(false))
-            this._skipNewLines()
-            if !this._match(Type.COMMA) break end
-            this._advance()
-            this._skipNewLines()
-        end
-
-        var rightBracket = this._require(Type.RSQUARE)
-
+        var leftBracket, elements, rightBracket = this._exprList(Type.LSQUARE, Type.RSQUARE)
         return ast.ListLit(leftBracket, elements, rightBracket)
     end
 
@@ -904,28 +882,43 @@ class Parser
             name = this._require(Type.IDENTIFIER)
         end
 
-        var leftBracket, rightBracket = null, null
-        var expressions = null
+        var leftBracket, exprs, rightBracket = null, null, null
+        var isUnpack = false
 
         if this._match(Type.LPAREN)
-            expressions = []
-            leftBracket = this._advance()
-            this._skipNewLines()
-
-            while !this._match(Type.RPAREN)
-                expressions.add(this._expression(false))
-                this._skipNewLines()
-                if !this._match(Type.COMMA) break end
+            leftBracket, exprs, rightBracket = this._exprList(Type.LPAREN, Type.RPAREN)
+            isUnpack = this._match(Type.VARARG)
+            if isUnpack
                 this._advance()
-                this._skipNewLines()
             end
-
-            rightBracket = this._require(Type.RPAREN)
         elif this._match(Type.LCURLY)
-            expressions.add(this._tableExpr())
+            exprs.add(this._tableExpr())
         end
 
-        return ast.SuperLit(superTok, name, leftBracket, expressions, rightBracket)
+        return ast.SuperLit(superTok, name, leftBracket, exprs, rightBracket, isUnpack)
+    end
+
+    fun _exprList(leftBracketType, rightBracketType)
+        var expressions = []
+
+        var leftBracket = this._require(leftBracketType)
+        this._skipNewLines()
+
+        while !this._match(rightBracketType)
+            expressions.add(this._expression(false))
+            this._skipNewLines()
+
+            if !this._match(Type.COMMA)
+                break
+            end
+
+            this._advance()
+            this._skipNewLines()
+        end
+
+        var rightBracket = this._require(rightBracketType)
+
+        return leftBracket, expressions, rightBracket
     end
 
     fun _match(type)

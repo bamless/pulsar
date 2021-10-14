@@ -119,7 +119,7 @@ class VariableResolver is PassVisitor
         super(varDecl)
 
         if varDecl.init != null
-            for var variable in variables
+            for var variable in variables.filter(|v| => v != null)
                 this._setInitialized(variable)
             end
         end
@@ -336,7 +336,7 @@ class VariableResolver is PassVisitor
         return this._initialized.lookup(variable)
     end
 
-    fun _define(token, init)
+    fun _define(token, initialize)
         var variable = this._scopes.lookupAt(token.getLexeme(), -1)
 
         if variable and !(this._ignoreGlobalRedef and this._inGlobalScope())
@@ -345,7 +345,7 @@ class VariableResolver is PassVisitor
             return null
         end
         
-        return this._defineName(token.getLexeme(), token.line(), this._getCurScope(), init)
+        return this._defineName(token.getLexeme(), token.line(), this._getCurScope(), initialize)
     end
 
     fun _defineName(name, line, scope, initialize)

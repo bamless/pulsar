@@ -569,12 +569,13 @@ class VarLit is Expr
 end
 
 class SuperLit is Expr
-    fun new(superTok, name, leftBracket, arguments, rightBracket)
+    fun new(superTok, name, leftBracket, arguments, rightBracket, isUnpack = false)
         this.superTok = superTok
         this.name = name
         this.leftBracket = leftBracket
         this.arguments = arguments
         this.rightBracket = rightBracket
+        this.isUnpack = isUnpack
     end
 
     fun accept(visitor)

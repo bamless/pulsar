@@ -94,7 +94,7 @@ class VariableResolver is PassVisitor
         end
 
         // We don't care about natives
-        for var meth in cls.methods.filter(|e| => e is ast.FuncDecl)
+        for var meth in cls.methods.filter(|m| => m is ast.FuncDecl)
             this._visitFunction(meth, true)
         end
     end

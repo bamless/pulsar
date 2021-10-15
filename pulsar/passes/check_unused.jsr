@@ -24,8 +24,8 @@ class UnusedChecker is PassVisitor
         this._exitScope()
     end
 
-    fun visitFunc(func)
-        if !this._inGlobalScope() or func.isStatic()
+    fun visitFunc(func, isMethod=false)
+        if !isMethod and (!this._inGlobalScope() or func.isStatic())
             this._define(func.name)
         end
 
@@ -69,7 +69,14 @@ class UnusedChecker is PassVisitor
         if !this._inGlobalScope() or cls.isStatic()
             this._define(cls.name)
         end
-        super(cls)
+
+        if cls.superClass
+            cls.superClass.accept(this)
+        end
+
+        for var meth in cls.methods.filter(|m| => m is ast.FuncDecl)
+            this.visitFunc(meth, true)
+        end
     end
 
     fun visitVar(varDecl)

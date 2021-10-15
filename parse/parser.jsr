@@ -882,7 +882,8 @@ class Parser
             name = this._require(Type.IDENTIFIER)
         end
 
-        var leftBracket, exprs, rightBracket = null, null, null
+        var exprs = []
+        var leftBracket, rightBracket = null, [], null
         var isUnpack = false
 
         if this._match(Type.LPAREN)

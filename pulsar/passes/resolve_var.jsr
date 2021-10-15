@@ -61,9 +61,11 @@ class VariableResolver is PassVisitor
     end
 
     // Propagate variable initialization state (usually from inner scopes) into the current scope
-    fun _propagateInitialization(initializedVars)
-        if !initializedVars return end
-        for var variable in initializedVars
+    fun _propagateInitialization(initialized)
+        if !initialized
+            return
+        end
+        for var variable in initialized
             if variable.scope <= this._getCurScope()
                 this._setInitialized(variable)
             end

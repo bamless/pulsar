@@ -12,8 +12,8 @@ import pulsar.passes.resolve_var for VariableResolver
 // Facade class for setting up and executing the various error checking passes.
 class Pulsar
     // Construct a new Pulsar object configured with `opts`.
-    // `opts` is a set of strings that determine which passes will be run.
-    // Valid values of opts are exactly the same as the cli options, and have the same effects.
+    // `opts` is a set of strings that determines which passes will be run.
+    // Valid values for opts are the same as the cli options, and have the same effects.
     fun new(opts)
         this._opts = opts
     end

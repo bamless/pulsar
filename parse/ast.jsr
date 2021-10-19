@@ -345,7 +345,7 @@ class AssignmentExpr is Expr
     end
 
     fun representativeToken()
-        return this.l.representativeToken()
+        return this.lvals[0].representativeToken()
     end
 end
 
@@ -361,7 +361,7 @@ class CompoundAssExpr is Expr
     end
 
     fun representativeToken()
-        return this.l.representativeToken()
+        return this.lval.representativeToken()
     end
 end
 

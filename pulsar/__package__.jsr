@@ -1,10 +1,11 @@
 import io
 import sys
 
+import pulsar.errors for Severity
+import pulsar.errors.json_reporter for JsonReporter
+import pulsar.errors.pretty_reporter for PrettyReporter
 import pulsar.opt_parse as opt_parse
 import pulsar.pulsar for Pulsar
-import pulsar.reporters.json_reporter for JsonReporter
-import pulsar.reporters.pretty_reporter for PrettyReporter
 
 var VERSION = (0, 0, 5)
 
@@ -29,8 +30,18 @@ fun main(args)
         sys.exit(0)
     end
 
+    var outFile = io.stderr
+    
+    if opts["out"]
+        try
+            outFile = io.File(opts["out"], "w") if opts["out"] else io.stderr
+        except io.IOException e
+            io.stderr.writeln("Error opening output file: {0}" % e.err())
+            sys.exit(-1)
+        end
+    end
+
     var pulsar = Pulsar(opts)
-    var outFile = io.File(opts["out"], "w") if opts["out"] else io.stderr
     var reporter = JsonReporter(outFile) if opts["json"] else PrettyReporter(outFile)
 
     try
@@ -39,11 +50,10 @@ fun main(args)
                 print("Analyzing {0}..." % path)
 
                 pulsar.analyzeFile(path, reporter)
-                
-                var errors, warnings = reporter.numErrors(), reporter.numWarnings()
-                reporter.reportErrors()
+                var numErrors = reporter.reportErrors()
 
-                print("File {0}: {1} errors, {2} warnings\n" % (path, errors, warnings))
+                print("File {0}: {1} errors, {2} warnings\n" % (path, numErrors[Severity.ERROR], \
+                      numErrors[Severity.WARNING]))
             except io.IOException e
                 io.stderr.writeln("Error {0}: {1}\n" % (path, e.err()))
             end

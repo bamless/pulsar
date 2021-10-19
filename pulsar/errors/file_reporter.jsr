@@ -1,6 +1,6 @@
 import io
 
-import pulsar.reporters.buffered_reporter for BufferedReporter
+import pulsar.errors.buffered_reporter for BufferedReporter
 
 // Abstract implementation of BufferedReporter that writes errors to a file.
 // The ownership of the file passed upon construction is taken by the class, and 

@@ -1,5 +1,5 @@
-import pulsar.reporters.reporter for Severity
-import pulsar.reporters.file_reporter for FileReporter
+import pulsar.errors for Severity
+import pulsar.errors.file_reporter for FileReporter
 
 static var prettySeverity = {
     Severity.ERROR   : "Error",
@@ -22,9 +22,11 @@ class PrettyReporter is FileReporter
         errorBuilder.add(":\n")
         errorBuilder.add(line)
         errorBuilder.add("\n")
+
         for var i = 0; i < colStart; i += 1
             errorBuilder.add("\t" if line.charAt(i) == char("\t") else " ")
         end
+        
         errorBuilder.add("^")
         errorBuilder.add("~" * (colEnd - colStart - 1))
         errorBuilder.add("\n")

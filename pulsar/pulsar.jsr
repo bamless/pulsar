@@ -1,13 +1,13 @@
 import parse.source as source
 import parse.parser for Parser
 
+import pulsar.errors for Severity
 import pulsar.passes.check_access for AccessChecker
 import pulsar.passes.check_return for ReturnChecker
 import pulsar.passes.check_semantics for SemanticChecker
 import pulsar.passes.check_unused for UnusedChecker
 import pulsar.passes.check_unreach for UnreachableCodeChecker
 import pulsar.passes.resolve_var for VariableResolver
-import pulsar.reporters.reporter for Severity
 
 // Facade class for setting up and executing the various error checking passes.
 class Pulsar

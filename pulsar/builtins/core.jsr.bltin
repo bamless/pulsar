@@ -1,10 +1,4 @@
-// Declare special symbols declared by the VM on initialization but not mentioned in the core file.
-// The initialization to `0` is here only to not let the variable resolver complain about
-// uninitialized variables
-var __name__, Object, Class = 0, 0, 0
-
-// --------------------- Start of real `core.jsr` file -------------------------
-
+var __name__, Object, Class = 0, 0, 0 // Dummy initialize interpreter builtins
 // -----------------------------------------------------------------------------
 // BUILTIN OBJECTS
 // -----------------------------------------------------------------------------
@@ -34,10 +28,14 @@ end
 
 class Function
     native __string__()
+    native arity()
+    native vararg()
+    native defaults()
 end
 
 class Module
     native __string__()
+    native globals()
 end
 
 class StackTrace end
@@ -122,6 +120,10 @@ class Iterable
         var lst = List(this)
         lst.sort()
         return lst
+    end
+
+    fun apply(transformIter, ...)
+        return transformIter(this, args)...
     end
 end
 
@@ -337,6 +339,8 @@ native type(o)
 // BUILTIN ITERATORS
 // -----------------------------------------------------------------------------
 
+// TODO: Fix inconsistencies in iterators constructors
+
 class ReversedSequence is Sequence
     fun new(sequence)
         this._sequence = sequence
@@ -347,7 +351,7 @@ class ReversedSequence is Sequence
         try
             return this._sequence[this._size - i - 1]
         except IndexOutOfBoundException e
-            raise IndexOutOfBoundException(##i)
+            raise IndexOutOfBoundException(##i, e)
         end
     end
 
@@ -417,9 +421,9 @@ class FilterIter is Iterable
 
     fun __iter__(iter)
         while iter = this._iterable.__iter__(iter)
-            var val = this._iterable.__next__(iter)
-            if this._predicate(val)
-                this._next = val
+            var value = this._iterable.__next__(iter)
+            if this._predicate(value)
+                this._next = value
                 return iter
             end
         end
@@ -457,12 +461,12 @@ class SkipIter is Iterable
             return this._iterable.__iter__(iter)
         end
 
+        var toSkip = this._count
         var iterator = this._iterable.__iter__(iter)
-        var count = this._count
 
-        while count > 0
+        while toSkip > 0 and iterator
             iterator = this._iterable.__iter__(iterator)
-            count -= 1
+            toSkip -= 1
         end
 
         return iterator

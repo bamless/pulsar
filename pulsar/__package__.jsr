@@ -34,7 +34,7 @@ fun main(args)
     
     if opts["out"]
         try
-            outFile = io.File(opts["out"], "w") if opts["out"] else io.stderr
+            outFile = io.File(opts["out"], "w")
         except io.IOException e
             io.stderr.writeln("Error opening output file: {0}" % e.err())
             sys.exit(-1)

@@ -45,6 +45,11 @@ fun main(args)
     var reporter = JsonReporter(outFile) if opts["json"] else PrettyReporter(outFile)
 
     try
+        var totalErrs = {
+            Severity.ERROR   : 0,
+            Severity.WARNING : 0
+        }
+
         for var path in files
             try
                 print("Analyzing {0}..." % path)
@@ -52,12 +57,19 @@ fun main(args)
                 pulsar.analyzeFile(path, reporter)
                 var numErrors = reporter.reportErrors()
 
+                for var errorType in numErrors
+                    totalErrs[errorType] += numErrors[errorType]
+                end
+
                 print("File {0}: {1} errors, {2} warnings\n" % (path, numErrors[Severity.ERROR], \
                       numErrors[Severity.WARNING]))
             except io.IOException e
                 io.stderr.writeln("Error {0}: {1}\n" % (path, e.err()))
             end
         end
+
+        print("Total errors: {0} errors, {1} warnings" % (totalErrs[Severity.ERROR], \
+              totalErrs[Severity.WARNING]))
     ensure
         reporter.close()
     end

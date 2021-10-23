@@ -68,7 +68,7 @@ fun main(args)
             end
         end
 
-        print("Total errors: {0} errors, {1} warnings" % (totalErrs[Severity.ERROR], \
+        print("Total: {0} errors, {1} warnings" % (totalErrs[Severity.ERROR], \
               totalErrs[Severity.WARNING]))
     ensure
         reporter.close()

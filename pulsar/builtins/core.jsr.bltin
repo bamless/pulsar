@@ -1,9 +1,8 @@
-var __name__, Object, Class = 0, 0, 0 // Dummy initialize interpreter builtins
 // -----------------------------------------------------------------------------
 // BUILTIN OBJECTS
 // -----------------------------------------------------------------------------
 
-var argv, importPaths = [], []
+var __name__, __path__, __this__, Object, Class, argv, importPaths = 0, 0, 0, 0, 0, [], []
 
 // -----------------------------------------------------------------------------
 // BUILTIN CLASSES
@@ -31,6 +30,7 @@ class Function
     native arity()
     native vararg()
     native defaults()
+    native getName()
 end
 
 class Module
@@ -97,11 +97,11 @@ class Iterable
     end
 
     fun map(fn)
-        return MapIter(fn, this)
+        return MapIter(this, fn)
     end
 
-    fun filter(fn) 
-        return FilterIter(fn, this)
+    fun filter(predicate) 
+        return FilterIter(this, predicate)
     end
 
     fun skip(count)
@@ -339,8 +339,6 @@ native type(o)
 // BUILTIN ITERATORS
 // -----------------------------------------------------------------------------
 
-// TODO: Fix inconsistencies in iterators constructors
-
 class ReversedSequence is Sequence
     fun new(sequence)
         this._sequence = sequence
@@ -413,7 +411,7 @@ class ConcatIter is Iterable
 end
 
 class FilterIter is Iterable
-    fun new(predicate, iterable)
+    fun new(iterable, predicate)
         this._predicate = predicate
         this._iterable = iterable
         this._next = null
@@ -436,7 +434,7 @@ class FilterIter is Iterable
 end
 
 class MapIter is Iterable
-    fun new(fn, iterable)
+    fun new(iterable, fn)
         this._fn = fn
         this._iterable = iterable
     end

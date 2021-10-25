@@ -65,11 +65,12 @@ fun main(args)
                       numErrors[Severity.WARNING]))
             except io.IOException e
                 io.stderr.writeln("Error {0}: {1}\n" % (path, e.err()))
+                totalErrs[Severity.ERROR] += 1
             end
         end
 
-        print("Total errors: {0} errors, {1} warnings" % (totalErrs[Severity.ERROR], \
-              totalErrs[Severity.WARNING]))
+        print("Total: {0} errors, {1} warnings in {2} {3}" % (totalErrs[Severity.ERROR], \
+              totalErrs[Severity.WARNING], #files, "files" if #files != 1 else "file"))
     ensure
         reporter.close()
     end

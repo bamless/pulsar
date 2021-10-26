@@ -140,10 +140,10 @@ class BlockStmt is Stmt
 end
 
 class IfStmt is Stmt
-    fun new(ifTok, cond,Body, elseBody)
+    fun new(ifTok, cond, thenBody, elseBody)
         this.ifTok = ifTok
         this.cond = cond
-        this.thenBody =Body
+        this.thenBody = thenBody
         this.elseBody = elseBody
     end
 

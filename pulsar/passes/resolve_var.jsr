@@ -4,13 +4,25 @@ import pulsar.builtins as builtins
 import pulsar.passes.pass_visitor for PassVisitor
 import pulsar.passes.symtable for SymbolTable
 
-// Computes the intersection of two Tables, only considering keys 
+// Computes the intersection of two Tables, only considering keys
 static fun intersect(table1, table2)
     var res = {}
     for var key in table1
         if table2.contains(key)
             res[key] = true
         end
+    end
+    return res
+end
+
+// Computes the union of two Tables, only considering keys
+static fun union(table1, table2)
+    var res = {}
+    for var key in table1
+        res[key] = true
+    end
+    for var key in table2
+        res[key] = true
     end
     return res
 end
@@ -50,24 +62,22 @@ class VariableResolver is PassVisitor
         this._enterScope()
         
         super(builtins.getBuiltinModule("core.jsr"))
-
-        for var stmt in module.statements
-            var initialized = stmt.accept(this)
-            this._propagateInitialization(initialized)
-        end
+        this._visitAndPropagate(module.statements)
 
         this._resolveFwdRefs()
         this._exitScope()
     end
 
-    // Propagate variable initialization state (usually from inner scopes) into the current scope
-    fun _propagateInitialization(initialized)
-        if !initialized
-            return
-        end
-        for var variable in initialized
-            if variable.scope <= this._getCurScope()
-                this._setInitialized(variable)
+    // Visit a set of statements and propagates their variable initialization into the current scope
+    fun _visitAndPropagate(stmts)
+        for var stmt in stmts
+            var initializedVars = stmt.accept(this)
+            if  initializedVars
+                for var variable in initializedVars
+                    if variable.scope <= this._getCurScope()
+                        this._setInitialized(variable)
+                    end
+                end
             end
         end
     end
@@ -142,22 +152,22 @@ class VariableResolver is PassVisitor
             this._define(arg, true)
         end
 
-        for var stmt in func.body.statements
-            var initialized = stmt.accept(this)
-            this._propagateInitialization(initialized)
-        end
+        this._visitAndPropagate(func.body.statements)
 
         this._exitFunction()
     end
 
     fun _checkStaticDecl(token)
-        if !this._inGlobalScope() return end
+        if !this._inGlobalScope() 
+            return
+        end
 
         var name = token.getLexeme()
-        for var forwardDecl in this._fwdRefs
-            if name == forwardDecl.getLexeme()
+
+        for var fwdDecl in this._fwdRefs
+            if name == fwdDecl.getLexeme()
                 this._error("Static name '{0}' referenced before declaration (line {1})" %
-                            (name, token.line()), forwardDecl)
+                            (name, token.line()), fwdDecl)
             end
         end
     end
@@ -169,16 +179,11 @@ class VariableResolver is PassVisitor
     // Visits a block and returns a Table containing the variables initialized in it
     fun visitBlock(block)
         this._enterScope()
-
-        for var stmt in block.statements
-            var initialized = stmt.accept(this)
-            this._propagateInitialization(initialized)
-        end
-
+        this._visitAndPropagate(block.statements)
         return this._exitScope()
     end
 
-    // Visits an `if` statement and retuns variables initialized in both branches
+    // Visits an if statement and retuns variables initialized in both branches
     fun visitIf(ifStmt)
         ifStmt.cond.accept(this)
 
@@ -205,25 +210,31 @@ class VariableResolver is PassVisitor
         return this._exitScope()
     end
 
+    // Visits a try statement and returns variables initialized in both the try and all excepts
+    // clauses plus all variables initialized in the ensure clause
     fun visitTry(tryStmt)
         var tryInit = tryStmt.tryBlock.accept(this)
 
-        var excInit = null
         if tryStmt.excepts != null
+            var excInit = null
+
             for var exc in tryStmt.excepts
                 var init = exc.accept(this)
                 excInit = intersect(excInit, init) if excInit else init
             end
+
+            tryInit = intersect(tryInit, excInit)
         end
 
-        var ensureInit = null
         if tryStmt.ensureBlock
-            ensureInit = tryStmt.ensureBlock.accept(this)
+            var ensureInit = tryStmt.ensureBlock.accept(this)
+            tryInit = union(tryInit, ensureInit)
         end
 
-        return intersect(tryInit, excInit) if !tryStmt.ensureBlock else ensureInit
+        return tryInit
     end
 
+    // Visit an except clause and returns variables initialized in it
     fun visitExcept(exceptStmt)
         this._enterScope()
        
@@ -237,6 +248,8 @@ class VariableResolver is PassVisitor
         return this._exitScope()
     end
 
+    // Visits a foreach statement. Doesn't return anything as its body is not guaranteed to be 
+    // executed, so no variables in it are definitely initialized
     fun visitForEach(forEach)
         forEach.iter.accept(this)
 
@@ -248,13 +261,15 @@ class VariableResolver is PassVisitor
             this._setInitialized(variable)
         end
 
-        for var s in forEach.body.statements
-            s.accept(this)
+        for var stmt in forEach.body.statements
+            stmt.accept(this)
         end
 
         this._exitScope()
     end
 
+    // Visits a with statement. Doesn't return anything as its body is not guaranteed to be 
+    // executed, so no variables in it are definitely initialized
     fun visitWith(withStmt)
         withStmt.expression.accept(this)
 
@@ -266,6 +281,8 @@ class VariableResolver is PassVisitor
         this._exitScope()
     end
 
+    // Visits an import statement. Defines the right module variables as initialized depending
+    // on the kind of impot it is (import ..., import ... as ... or import ... for ...)
     fun visitImport(importStmt)
         if importStmt.asName
             this._define(importStmt.asName, true)

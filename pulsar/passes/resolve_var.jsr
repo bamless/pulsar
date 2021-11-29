@@ -68,8 +68,8 @@ class VariableResolver is PassVisitor
         this._exitScope()
     end
 
-    // Visits a set of statements and propagates their 
-    // variable initialization into the current scope
+    // Visits a set of statements and propagates their variable 
+    // initialization state into the current scope
     fun _visitAndPropagate(stmts)
         for var stmt in stmts
             var initializedVars = stmt.accept(this)

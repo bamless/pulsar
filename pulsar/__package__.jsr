@@ -64,7 +64,7 @@ fun main(args)
                 print("File {0}: {1} errors, {2} warnings\n" % (path, numErrors[Severity.ERROR], \
                       numErrors[Severity.WARNING]))
             except io.IOException e
-                io.stderr.writeln("Error {0}: {1}\n" % (path, e.err()))
+                io.stderr.writeln("Error analyzing '{0}': {1}\n" % (path, e.err()))
                 totalErrs[Severity.ERROR] += 1
             end
         end

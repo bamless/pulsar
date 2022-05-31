@@ -17,6 +17,6 @@ class JsonFormatter
             '"line"'     : token.line(),
             '"coloumn"'  : token.coloumn(),
             '"message"'  : '"{0}"' % message.escaped()
-        }
+        } + "\n"
     end
 end

@@ -30,6 +30,7 @@ class PrettyFormatter
         errorBuilder.add("~" * (colEnd - colStart - 1))
         errorBuilder.add("\n")
         errorBuilder.add(message)
+        errorBuilder.add("\n")
 
         return errorBuilder.join()
     end

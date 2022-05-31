@@ -1,5 +1,4 @@
 import pulsar.errors for Severity
-import pulsar.errors.file_reporter for FileReporter
 
 static var prettySeverity = {
     Severity.ERROR   : "Error",
@@ -8,8 +7,8 @@ static var prettySeverity = {
 
 // Error reporter that reports errors to a file, and
 // formats them nicely for visualization by a human.
-class PrettyReporter is FileReporter
-    fun doFormatError(severity, message, token)
+class PrettyFormatter
+    fun format(severity, message, token)
         var lineStart = token.line()
         var colStart = token.coloumn() - 1
         var colEnd = token.coloumnEnd() - 1

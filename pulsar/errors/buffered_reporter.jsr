@@ -1,21 +1,15 @@
 import pulsar.errors for Reporter, Severity
 
-// Abstract implementation of Reporter that buffers the errors and delays the reporting until 
+// Implementation of Reporter that buffers the errors and delays the reporting until 
 // `reportErrors` is called.
-// Primitive methods are used to let subclasses customize formatting and outputting of errors.
+// Strategy objects are used to customize how to format the errors, and where to output them:
+//  - `formatStrategy`: an object that provides a method format(pulsar.errors.Severity, String, parse.token.Token) -> String
+//  - `writeStragegy`: an object that provides a method write(string) -> void
 class BufferedReporter is Reporter
-    fun new()
+    fun new(formatStrategy, writeStrategy)
+        this._formatStragety = formatStrategy
+        this._writeStrategy = writeStrategy
         this._errors = []
-    end
-
-    // Primitive method called during `reportErrors` to format an error.
-    fun doFormatError(severity_, message_, token_)
-        raise NotImplementedException()
-    end
-
-    // Primitive method called during `reportErrors` to output a formatted error.
-    fun doOutputError(error_)
-        raise NotImplementedException()
     end
 
     // Buffers an error to be reported at a later time
@@ -24,8 +18,7 @@ class BufferedReporter is Reporter
     end
 
     // Reports all recorded errors till now and clears the buffer. The errors are sorted by line.
-    // This, being a template method, musn't be overridden by subclasses.
-    // Returns a table containing the number of errors of all severity
+    // Returns a table containing the number of errors associated with their severity
     fun reportErrors()
         var numErrors = {
             Severity.ERROR   : 0,
@@ -36,14 +29,25 @@ class BufferedReporter is Reporter
 
         for var severity, message, token in this._errors
             numErrors[severity] += 1
-            this.doOutputError(this.doFormatError(severity, message, token))
+            this._writeStrategy.write(this._formatStragety.format(severity, message, token))
         end
 
         this._errors.clear()
         return numErrors
     end
 
+    // Returns a copy of the error list
     fun getErrors()
-        return this._errors
+        return List(this._errors)
+    end
+
+    // Returns currently buffered errors
+    fun numErrors()
+        return #this._errors
+    end
+
+    // Clears currentrly buffered errors
+    fun clearErrors()
+        this._errors.clear()
     end
 end

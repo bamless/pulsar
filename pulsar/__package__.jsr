@@ -2,28 +2,29 @@ import io
 import sys
 
 import pulsar.errors for Severity
-import pulsar.errors.json_reporter for JsonReporter
-import pulsar.errors.pretty_reporter for PrettyReporter
+import pulsar.errors.buffered_reporter for BufferedReporter
+import pulsar.errors.json_formatter for JsonFormatter
+import pulsar.errors.pretty_formatter for PrettyFormatter
 import pulsar.opt_parse as opt_parse
 import pulsar.pulsar for Pulsar
 
 var VERSION = (0, 0, 6)
 
-fun main(args)
-    var parser = opt_parse.OptParser("pulsar [options] [files...]", "A static analyzer for the J* language", [
-        opt_parse.Option("out", "o", "Write errors to the specified file", 1, ["file"]),
-        opt_parse.Option("version", "v", "Print version information and exit", 0),
-        opt_parse.Option("json", "j", "Output errors formatted as JSON", 0),
-        opt_parse.Option("no-resolve", "V", "Disable variable resolution pass", 0),
-        opt_parse.Option("no-redefined-globals", "g", "Ignore redefined global variables", 0),
-        opt_parse.Option("no-unreachable", "U", "Disable unreachable code pass", 0),
-        opt_parse.Option("no-unused-args", "a", "Ignore unused function arguments", 0),
-        opt_parse.Option("no-unused", "u", "Disable unused variable pass", 0),
-        opt_parse.Option("no-check-returns", "r", "Disable return checking pass", 0),
-        opt_parse.Option("no-access-check", "A", "Disable access checking pass", 0)
-    ])
+static var optParser = opt_parse.OptParser("pulsar [options] [files...]", "A static analyzer for the J* language", [
+    opt_parse.Option("out", "o", "Write errors to the specified file", 1, ["file"]),
+    opt_parse.Option("version", "v", "Print version information and exit", 0),
+    opt_parse.Option("json", "j", "Output errors formatted as JSON", 0),
+    opt_parse.Option("no-resolve", "V", "Disable variable resolution pass", 0),
+    opt_parse.Option("no-redefined-globals", "g", "Ignore redefined global variables", 0),
+    opt_parse.Option("no-unreachable", "U", "Disable unreachable code pass", 0),
+    opt_parse.Option("no-unused-args", "a", "Ignore unused function arguments", 0),
+    opt_parse.Option("no-unused", "u", "Disable unused variable pass", 0),
+    opt_parse.Option("no-check-returns", "r", "Disable return checking pass", 0),
+    opt_parse.Option("no-access-check", "A", "Disable access checking pass", 0)
+])
 
-    var opts, files = parser.parse(args)
+fun main(args)
+    var opts, files = optParser.parse(args)
 
     if opts["version"]
         print("{0} v{1}" % (__name__, VERSION.join(".")))
@@ -42,7 +43,9 @@ fun main(args)
     end
 
     var pulsar = Pulsar(opts)
-    var reporter = JsonReporter(outFile) if opts["json"] else PrettyReporter(outFile)
+
+    var formatter = JsonFormatter() if opts["json"] else PrettyFormatter()
+    var reporter = BufferedReporter(outFile, formatter)
 
     try
         var totalErrs = {
@@ -72,6 +75,8 @@ fun main(args)
         print("Total: {0} errors, {1} warnings in {2} {3}" % (totalErrs[Severity.ERROR], \
               totalErrs[Severity.WARNING], #files, "files" if #files != 1 else "file"))
     ensure
-        reporter.close()
+        if opts['out']
+            outFile.close()
+        end
     end
 end

@@ -45,7 +45,7 @@ fun main(args)
     var pulsar = Pulsar(opts)
 
     var formatter = JsonFormatter() if opts["json"] else PrettyFormatter()
-    var reporter = BufferedReporter(outFile, formatter)
+    var reporter = BufferedReporter(formatter, outFile)
 
     try
         var totalErrs = {

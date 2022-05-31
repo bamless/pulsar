@@ -75,7 +75,7 @@ fun main(args)
         print("Total: {0} errors, {1} warnings in {2} {3}" % (totalErrs[Severity.ERROR], \
               totalErrs[Severity.WARNING], #files, "files" if #files != 1 else "file"))
     ensure
-        if opts['out']
+        if opts["out"]
             outFile.close()
         end
     end

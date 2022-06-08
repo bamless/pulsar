@@ -1,8 +1,8 @@
-import parse.ast as ast
-import parse.lexer for Lexer
-import parse.token for Token, Type
-import parse.token_name for TokenName
-import parse.source for SourceFile
+import pulsar.parse.ast as ast
+import pulsar.parse.lexer for Lexer
+import pulsar.parse.token for Token, Type
+import pulsar.parse.token_name for TokenName
+import pulsar.parse.source for SourceFile
 
 static var OR_OP = {
     Type.OR : true

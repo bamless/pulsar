@@ -1,7 +1,6 @@
-import parse.source as source
-import parse.parser for Parser
-
 import pulsar.errors for Severity
+import pulsar.parse.source as source
+import pulsar.parse.parser for Parser
 import pulsar.passes.check_access for AccessChecker
 import pulsar.passes.check_return for ReturnChecker
 import pulsar.passes.check_semantics for SemanticChecker

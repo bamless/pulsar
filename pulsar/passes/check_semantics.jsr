@@ -1,5 +1,4 @@
-import parse.ast as ast
-
+import pulsar.parse.ast as ast
 import pulsar.passes.pass_visitor for PassVisitor
 import pulsar.passes.token_utils as token_utils
 

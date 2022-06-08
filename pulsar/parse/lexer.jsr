@@ -1,4 +1,4 @@
-import parse.token for Token, Type
+import pulsar.parse.token for Token, Type
 
 static var KEYWORDS = {
     'and'      : Type.AND,

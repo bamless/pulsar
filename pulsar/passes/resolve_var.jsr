@@ -1,6 +1,5 @@
-import parse.ast as ast
-
 import pulsar.builtins as builtins
+import pulsar.parse.ast as ast
 import pulsar.passes.pass_visitor for PassVisitor
 import pulsar.passes.symtable for SymbolTable
 

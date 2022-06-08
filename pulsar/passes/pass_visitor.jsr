@@ -1,6 +1,5 @@
-import parse.visitor for Visitor
-
 import pulsar.errors for Severity
+import pulsar.parse.visitor for Visitor
 
 class PassVisitor is Visitor
     fun new(reporter)

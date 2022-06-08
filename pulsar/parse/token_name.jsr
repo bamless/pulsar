@@ -1,4 +1,4 @@
-import parse.token for Type
+import pulsar.parse.token for Type
 
 var TokenName = {
     Type.LPAREN: "(",

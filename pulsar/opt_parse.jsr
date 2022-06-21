@@ -150,14 +150,12 @@ class OptParser
 end
 
 class Option
-    fun new(long, short, description, args, argNames=null, default=null, required=false)
+    fun new(long, short, description, args=0, argNames=null, default=null, required=false)
         assert(#long > 1, "Long option must have length greater than one", InvalidArgException)
         assert(#short == 1, "Short option must have length equal to one", InvalidArgException)
-        assert(args == 0 or args == #argNames, "Not enough arg names given", InvalidArgException)
-        assert(!required or default, "Required argument {0} cannot have default value" % long,
-               InvalidArgException)
-        assert(args > 0 or default == null, "Flag option '{0}' cannot have default value" %
-               long, InvalidArgException)
+        assert(args == 0 or args == #argNames, "Not enough argument names given", InvalidArgException)
+        assert(!required or default, "Required argument {0} cannot have default value" % long, InvalidArgException)
+        assert(args > 0 or default == null, "Flag option '{0}' cannot have default value" % long, InvalidArgException)
 
         this.long = long
         this.short = short

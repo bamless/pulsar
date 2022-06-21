@@ -5,23 +5,23 @@ import pulsar.errors for Severity
 import pulsar.errors.buffered_reporter for BufferedReporter
 import pulsar.errors.json_formatter for JsonFormatter
 import pulsar.errors.pretty_formatter for PrettyFormatter
-import pulsar.opt_parse as opt_parse
+import pulsar.opt_parse for OptParser, Option
 import pulsar.pulsar for Pulsar
 
 var VERSION = (0, 0, 6)
 
 fun main(args)
-    var optParser = opt_parse.OptParser("pulsar [options] [files...]", "A static analyzer for the J* language", [
-        opt_parse.Option("out", "o", "Write errors to the specified file", 1, ["file"]),
-        opt_parse.Option("version", "v", "Print version information and exit"),
-        opt_parse.Option("json", "j", "Output errors formatted as JSON"),
-        opt_parse.Option("no-resolve", "V", "Disable variable resolution pass"),
-        opt_parse.Option("no-redefined-globals", "g", "Ignore redefined global variables"),
-        opt_parse.Option("no-unreachable", "U", "Disable unreachable code pass"),
-        opt_parse.Option("no-unused-args", "a", "Ignore unused function arguments"),
-        opt_parse.Option("no-unused", "u", "Disable unused variable pass"),
-        opt_parse.Option("no-check-returns", "r", "Disable return checking pass"),
-        opt_parse.Option("no-access-check", "A", "Disable access checking pass")
+    var optParser = OptParser("pulsar [options] [files...]", "A static analyzer for the J* language", [
+        Option("out", "o", "Write errors to the specified file", 1, ["file"]),
+        Option("version", "v", "Print version information and exit"),
+        Option("json", "j", "Output errors formatted as JSON"),
+        Option("no-resolve", "V", "Disable variable resolution pass"),
+        Option("no-redefined-globals", "g", "Ignore redefined global variables"),
+        Option("no-unreachable", "U", "Disable unreachable code pass"),
+        Option("no-unused-args", "a", "Ignore unused function arguments"),
+        Option("no-unused", "u", "Disable unused variable pass"),
+        Option("no-check-returns", "r", "Disable return checking pass"),
+        Option("no-access-check", "A", "Disable access checking pass")
     ])
 
     var opts, files = optParser.parse(args)

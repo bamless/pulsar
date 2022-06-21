@@ -10,20 +10,20 @@ import pulsar.pulsar for Pulsar
 
 var VERSION = (0, 0, 6)
 
-static var optParser = opt_parse.OptParser("pulsar [options] [files...]", "A static analyzer for the J* language", [
-    opt_parse.Option("out", "o", "Write errors to the specified file", 1, ["file"]),
-    opt_parse.Option("version", "v", "Print version information and exit", 0),
-    opt_parse.Option("json", "j", "Output errors formatted as JSON", 0),
-    opt_parse.Option("no-resolve", "V", "Disable variable resolution pass", 0),
-    opt_parse.Option("no-redefined-globals", "g", "Ignore redefined global variables", 0),
-    opt_parse.Option("no-unreachable", "U", "Disable unreachable code pass", 0),
-    opt_parse.Option("no-unused-args", "a", "Ignore unused function arguments", 0),
-    opt_parse.Option("no-unused", "u", "Disable unused variable pass", 0),
-    opt_parse.Option("no-check-returns", "r", "Disable return checking pass", 0),
-    opt_parse.Option("no-access-check", "A", "Disable access checking pass", 0)
-])
-
 fun main(args)
+    var optParser = opt_parse.OptParser("pulsar [options] [files...]", "A static analyzer for the J* language", [
+        opt_parse.Option("out", "o", "Write errors to the specified file", 1, ["file"]),
+        opt_parse.Option("version", "v", "Print version information and exit", 0),
+        opt_parse.Option("json", "j", "Output errors formatted as JSON", 0),
+        opt_parse.Option("no-resolve", "V", "Disable variable resolution pass", 0),
+        opt_parse.Option("no-redefined-globals", "g", "Ignore redefined global variables", 0),
+        opt_parse.Option("no-unreachable", "U", "Disable unreachable code pass", 0),
+        opt_parse.Option("no-unused-args", "a", "Ignore unused function arguments", 0),
+        opt_parse.Option("no-unused", "u", "Disable unused variable pass", 0),
+        opt_parse.Option("no-check-returns", "r", "Disable return checking pass", 0),
+        opt_parse.Option("no-access-check", "A", "Disable access checking pass", 0)
+    ])
+
     var opts, files = optParser.parse(args)
 
     if opts["version"]
@@ -43,7 +43,6 @@ fun main(args)
     end
 
     var pulsar = Pulsar(opts)
-
     var formatter = JsonFormatter() if opts["json"] else PrettyFormatter()
     var reporter = BufferedReporter(formatter, outFile)
 

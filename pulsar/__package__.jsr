@@ -1,10 +1,10 @@
 import io
 import sys
 
-import pulsar.errors for Severity
 import pulsar.errors.buffered_reporter for BufferedReporter
 import pulsar.errors.json_formatter for JsonFormatter
 import pulsar.errors.pretty_formatter for PrettyFormatter
+import pulsar.errors.reporter for Severity
 import pulsar.opt_parse for OptParser, Option
 import pulsar.pulsar for Pulsar
 

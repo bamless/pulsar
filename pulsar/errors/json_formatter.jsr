@@ -1,4 +1,4 @@
-import pulsar.errors for Severity
+import pulsar.errors.reporter for Severity
 
 static var jsonSeverity = {
     Severity.ERROR   : '"error"',

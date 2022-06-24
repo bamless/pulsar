@@ -1,4 +1,3 @@
-import pulsar.errors for Severity
 import pulsar.parse.source as source
 import pulsar.parse.parser for Parser
 import pulsar.passes.check_access for AccessChecker
@@ -7,6 +6,7 @@ import pulsar.passes.check_semantics for SemanticChecker
 import pulsar.passes.check_unused for UnusedChecker
 import pulsar.passes.check_unreach for UnreachableCodeChecker
 import pulsar.passes.resolve_var for VariableResolver
+import pulsar.errors.reporter for Severity
 
 // Facade class for setting up and executing the various error checking passes.
 class Pulsar

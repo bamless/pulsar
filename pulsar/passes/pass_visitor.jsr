@@ -1,4 +1,4 @@
-import pulsar.errors for Severity
+import pulsar.errors.reporter for Severity
 import pulsar.parse.visitor for Visitor
 
 class PassVisitor is Visitor

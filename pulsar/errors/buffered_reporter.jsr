@@ -1,4 +1,4 @@
-import pulsar.errors for Reporter, Severity
+import pulsar.errors.reporter for Reporter, Severity
 
 // Implementation of Reporter that buffers the errors and delays the reporting until 
 // `reportErrors` is called.

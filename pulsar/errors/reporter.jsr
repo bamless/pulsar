@@ -1,0 +1,13 @@
+// Enum of all available error severities
+var Severity = Enum("WARNING", "ERROR")
+
+// Error reporter interface.
+// `reportError` will be called by the various error checking passes upon encountering a problem.
+class Reporter
+    // @arg severity: Severity The severity of the error
+    // @arg message: String A description of the error
+    // @arg token: parse.token.Token Token involved in the error
+    fun reportError(severity_, message_, token_)
+        raise NotImplementedException()
+    end
+end

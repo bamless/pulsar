@@ -24,9 +24,10 @@ static fun buildHelpMessage(usage, description, options)
         helpLines.add((optionString, option.description))
     end
 
-    var maxColWidth = helpLines.reduce(0, |width, line| => max(width, #line[0]))
 
     // Add options to the builder, left-jusifying the second coloumn
+    var maxColWidth = helpLines.reduce(0, |width, line| => max(width, #line[0]))
+    
     var helpOption, helpDescription = helpLines.removeAt(0)
     helpBuilder.add(INDENT)
     helpBuilder.add(leftJustify(helpOption, maxColWidth))

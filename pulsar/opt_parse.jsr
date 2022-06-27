@@ -4,39 +4,41 @@ import sys
 
 static var INDENT = " " * 4
 
+// Adds trailing spaces to 'string' in order to left-justify the following text to 'justification'
 static fun leftJustify(string, justification)
     return string + " " * (justification - #string)
 end
 
-static fun buildHelpMessage(usage, description, optDesc)
+// Builds an help message starting from the options and a custom usage and description message
+static fun buildHelpMessage(usage, description, options)
     var helpBuilder = ["Usage: ", usage, "\n", description, "\n\n"]
 
     // Stringify options along with their description
-    var optLines = [("-h, --help", "Show this help message and exit")]
-    for var opt in optDesc
-        var optString = "-{0}, --{1}" % (opt.short, opt.long)
-        if opt.args > 0
-            optString += " " + opt.argNames.map(|name| => "'" + name + "'").join(", ")
+    var helpLines = [("-h, --help", "Show this help message and exit")]
+    
+    for var option in options
+        var optionString = "-{0}, --{1}" % (option.short, option.long)
+        if option.args > 0
+            optionString += " " + option.argNames.map(|name| => "'" + name + "'").join(", ")
         end 
-        optLines.add((optString, opt.description))
+        helpLines.add((optionString, option.description))
     end
 
-    // Calculate the max coloumn width
-    var colWidth = optLines.reduce(0, |width, line| => max(width, #line[0]))
+    var maxColWidth = helpLines.reduce(0, |width, line| => max(width, #line[0]))
 
-    // Add options to the builder, left-jusifying the second coloumn to `colWidth`
-    var helpOption, helpDescription = optLines.removeAt(0)
+    // Add options to the builder, left-jusifying the second coloumn
+    var helpOption, helpDescription = helpLines.removeAt(0)
     helpBuilder.add(INDENT)
-    helpBuilder.add(leftJustify(helpOption, colWidth))
+    helpBuilder.add(leftJustify(helpOption, maxColWidth))
     helpBuilder.add("  ")
     helpBuilder.add(helpDescription)
     helpBuilder.add("\n\n")
 
     helpBuilder.add("Options")
-    for var option, description in optLines
+    for var option, description in helpLines
         helpBuilder.add("\n")
         helpBuilder.add(INDENT)
-        helpBuilder.add(leftJustify(option, colWidth))
+        helpBuilder.add(leftJustify(option, maxColWidth))
         helpBuilder.add("  ")
         helpBuilder.add(description)
     end
@@ -44,23 +46,26 @@ static fun buildHelpMessage(usage, description, optDesc)
     return helpBuilder.join()
 end
 
-static fun processOptDesc(optDesc)
+// Processes the option array (array of opt_parse.Option) and returns a Table
+// mapping from long and short option strings back to the opt_parse.Option
+static fun buildMapFromOptions(options)
     var optMap = {}
-    for var opt in optDesc
-        var short = "-" + opt.short
-        var long = "--" + opt.long
+    for var option in options
+        var short = "-" + option.short
+        var long = "--" + option.long
         if optMap.contains(short)
-            raise InvalidArgException("Duplicate short option '{0}'" % opt.short)
+            raise InvalidArgException("Duplicate short option '{0}'" % option.short)
         end
         if optMap.contains(long)
-            raise InvalidArgException("Duplicate long option '{0}'" % opt.long)
+            raise InvalidArgException("Duplicate long option '{0}'" % option.long)
         end
-        optMap[short] = opt
-        optMap[long] = opt
+        optMap[short] = option
+        optMap[long] = option
     end
     return optMap
 end
 
+// Pops n elements from 'stack'
 static fun popn(stack, num)
     if num == 1
         return stack.pop()
@@ -75,10 +80,10 @@ static fun popn(stack, num)
 end
 
 class OptParser
-    fun new(usage, description, optDesc)
-        this._optDesc = optDesc
-        this._optMap = processOptDesc(optDesc)
-        this._helpMsg = buildHelpMessage(usage, description, optDesc)
+    fun new(usage, description, options)
+        this._options = options
+        this._optMap = buildMapFromOptions(options)
+        this._helpMsg = buildHelpMessage(usage, description, options)
     end
 
     fun parse(args)
@@ -128,15 +133,15 @@ class OptParser
             end
         end
 
-        for var opt in this._optDesc
-            if !result.contains(opt.long)
-                if opt.required
+        for var option in this._options
+            if !result.contains(option.long)
+                if option.required
                     io.stderr.writeln("error: option `{0}, {1}` is mandatory" %
-                                      (opt.short, opt.long))
+                                      (option.short, option.long))
                     this.printHelp()
                     sys.exit(-1)
-                elif opt.default
-                    result[opt.long] = opt.default
+                elif option.default
+                    result[option.long] = option.default
                 end
             end
         end

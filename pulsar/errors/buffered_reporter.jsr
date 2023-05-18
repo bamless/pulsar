@@ -1,14 +1,14 @@
-import pulsar.errors.reporter for Reporter, Severity
+import pulsar.errors.reporter for IReporter, Severity
 
 // Implementation of Reporter that buffers the errors and delays the reporting until 
 // `reportErrors` is called.
 // Strategy objects are used to customize how to format the errors, and where to output them:
-//  - `formatStrategy`: an object that provides a method format(pulsar.errors.Severity, String, parse.token.Token) -> String
-//  - `writeStragegy`: an object that provides a method write(string) -> void
-class BufferedReporter is Reporter
-    fun new(formatStrategy, writeStrategy)
-        this._formatStragety = formatStrategy
-        this._writeStrategy = writeStrategy
+//  - `formatter`: an object that provides a method format(pulsar.errors.Severity, String, parse.token.Token) -> String
+//  - `writer`: an object that provides a method write(string) -> void
+class BufferedReporter is IReporter
+    fun new(formatter, writer)
+        this._formatter = formatter
+        this._writer = writer
         this._errors = []
     end
 
@@ -29,7 +29,7 @@ class BufferedReporter is Reporter
 
         for var severity, message, token in this._errors
             numErrors[severity] += 1
-            this._writeStrategy.write(this._formatStragety.format(severity, message, token))
+            this._writer.write(this._formatter.format(severity, message, token))
         end
 
         this._errors.clear()

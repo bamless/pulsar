@@ -1,7 +1,7 @@
 // Scoped symbol table
 // Mantains association between a symbol and some data
 class SymbolTable
-    fun new()
+    construct()
         this._scopes = []
     end
 

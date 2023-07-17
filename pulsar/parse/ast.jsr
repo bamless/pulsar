@@ -18,7 +18,7 @@ class Stmt is Node end
 class Expr is Node end
 
 class AstModule is Node
-    fun new(statements)
+    construct(statements)
         this.statements = statements
     end
 
@@ -32,7 +32,7 @@ class AstModule is Node
 end
 
 static class Decl is Stmt
-    fun new()
+    construct()
         this._static = false
     end
 
@@ -46,7 +46,7 @@ static class Decl is Stmt
 end
 
 class FuncDecl is Decl
-    fun new(funTok, name, leftBracket, arguments, defaults, vararg, rightBracket, body)
+    construct(funTok, name, leftBracket, arguments, defaults, vararg, rightBracket, body)
         super()
         this.funTok = funTok
         this.name = name
@@ -68,7 +68,7 @@ class FuncDecl is Decl
 end
 
 class NativeDecl is Decl
-    fun new(nativeTok, name, leftBracket, arguments, defaults, vararg, rightBracket)
+    construct(nativeTok, name, leftBracket, arguments, defaults, vararg, rightBracket)
         super()
         this.nativeTok = nativeTok
         this.name = name
@@ -89,7 +89,7 @@ class NativeDecl is Decl
 end
 
 class ClassDecl is Decl
-    fun new(classTok, name, superClass, methods)
+    construct(classTok, name, superClass, methods)
         super()
         this.classTok = classTok
         this.name = name
@@ -107,7 +107,7 @@ class ClassDecl is Decl
 end
 
 class VarDecl is Decl
-    fun new(varTok, names, equal, init, unpack)
+    construct(varTok, names, equal, init, unpack)
         super()
         this.varTok = varTok
         this.names = names
@@ -126,7 +126,7 @@ class VarDecl is Decl
 end
 
 class BlockStmt is Stmt
-    fun new(statements)
+    construct(statements)
         this.statements = statements
     end
 
@@ -140,7 +140,7 @@ class BlockStmt is Stmt
 end
 
 class IfStmt is Stmt
-    fun new(ifTok, cond, thenBody, elseBody)
+    construct(ifTok, cond, thenBody, elseBody)
         this.ifTok = ifTok
         this.cond = cond
         this.thenBody = thenBody
@@ -157,7 +157,7 @@ class IfStmt is Stmt
 end
 
 class ForStmt is Stmt
-    fun new(forTok, init, cond, action, body)
+    construct(forTok, init, cond, action, body)
         this.forTok = forTok
         this.init = init
         this.cond = cond
@@ -175,7 +175,7 @@ class ForStmt is Stmt
 end
 
 class ForEachStmt is Stmt
-    fun new(forTok, variable, inTok, iter, body)
+    construct(forTok, variable, inTok, iter, body)
         this.forTok = forTok
         this.variable, this.iter = variable, iter
         this.inTok = inTok
@@ -192,7 +192,7 @@ class ForEachStmt is Stmt
 end
 
 class WhileStmt is Stmt
-    fun new(whileTok, cond, body)
+    construct(whileTok, cond, body)
         this.whileTok = whileTok
         this.cond = cond
         this.body = body
@@ -208,7 +208,7 @@ class WhileStmt is Stmt
 end
 
 class ReturnStmt is Stmt
-    fun new(returnTok, expr)
+    construct(returnTok, expr)
         this.returnTok = returnTok
         this.expr = expr
     end
@@ -223,7 +223,7 @@ class ReturnStmt is Stmt
 end
 
 class ImportStmt is Stmt
-    fun new(importTok, modules, asName, names)
+    construct(importTok, modules, asName, names)
         this.importTok = importTok
         this.modules = modules
         this.asName = asName
@@ -240,7 +240,7 @@ class ImportStmt is Stmt
 end
 
 class TryStmt is Stmt
-    fun new(tokTry, tryBlock, excepts, ensureBlock)
+    construct(tokTry, tryBlock, excepts, ensureBlock)
         this.tokTry = tokTry
         this.tryBlock = tryBlock
         this.excepts = excepts
@@ -257,7 +257,7 @@ class TryStmt is Stmt
 end
 
 class ExceptStmt is Stmt
-    fun new(exceptTok, expression, name, body)
+    construct(exceptTok, expression, name, body)
         this.exceptTok = exceptTok
         this.expression = expression
         this.name = name
@@ -274,7 +274,7 @@ class ExceptStmt is Stmt
 end
 
 class RaiseStmt is Stmt
-    fun new(raiseTok, expression)
+    construct(raiseTok, expression)
         this.raiseTok = raiseTok
         this.expression = expression
     end
@@ -289,7 +289,7 @@ class RaiseStmt is Stmt
 end
 
 class WithStmt is Stmt
-    fun new(withTok, expression, name, body)
+    construct(withTok, expression, name, body)
         this.withTok = withTok
         this.expression = expression
         this.name = name
@@ -306,7 +306,7 @@ class WithStmt is Stmt
 end
 
 class BreakStmt is Stmt
-    fun new(token)
+    construct(token)
         this.token = token
     end
 
@@ -320,7 +320,7 @@ class BreakStmt is Stmt
 end
 
 class ContinueStmt is Stmt
-    fun new(token)
+    construct(token)
         this.token = token
     end
 
@@ -334,7 +334,7 @@ class ContinueStmt is Stmt
 end
 
 class AssignmentExpr is Expr
-    fun new(lvals, equal, rval)
+    construct(lvals, equal, rval)
         this.lvals = lvals
         this.equal = equal
         this.rval = rval
@@ -350,7 +350,7 @@ class AssignmentExpr is Expr
 end
 
 class CompoundAssExpr is Expr
-    fun new(lval, op, rval)
+    construct(lval, op, rval)
         this.lval = lval
         this.op = op
         this.rval = rval
@@ -366,7 +366,7 @@ class CompoundAssExpr is Expr
 end
 
 class BinaryExpr is Expr
-    fun new(l, op, r)
+    construct(l, op, r)
         this.op = op
         this.l, this.r = l ,r
     end
@@ -381,7 +381,7 @@ class BinaryExpr is Expr
 end
 
 class UnaryExpr is Expr
-    fun new(op, operand)
+    construct(op, operand)
         this.op = op
         this.operand = operand
     end
@@ -396,7 +396,7 @@ class UnaryExpr is Expr
 end
 
 class ExponentExpr is Expr
-    fun new(base, pow, exponent)
+    construct(base, pow, exponent)
         this.base = base
         this.pow = pow
         this.exponent = exponent
@@ -412,7 +412,7 @@ class ExponentExpr is Expr
 end
 
 class TernaryExpr is Expr
-    fun new(thenExp, ifTok, cond, elseTok, elseExp)
+    construct(thenExp, ifTok, cond, elseTok, elseExp)
         this.ifTok, this.elseTok = ifTok, elseTok
         this.cond = cond
         this.thenExp = thenExp
@@ -429,7 +429,7 @@ class TernaryExpr is Expr
 end
 
 class FuncLit is Expr
-    fun new(funTok, leftBracket, arguments, defaults, vararg, rightBracket, body)
+    construct(funTok, leftBracket, arguments, defaults, vararg, rightBracket, body)
         this.funTok = funTok
         this.name = null
         this.leftBracket = leftBracket
@@ -450,7 +450,7 @@ class FuncLit is Expr
 end
 
 class AttributeExpr is Expr
-    fun new(l, dot, name)
+    construct(l, dot, name)
         this.l, this.dot, this.name = l, dot, name
     end
 
@@ -464,7 +464,7 @@ class AttributeExpr is Expr
 end
 
 class CallExpr is Expr
-    fun new(l, leftBracket, expressions, rightBracket, isUnpack=false)
+    construct(l, leftBracket, expressions, rightBracket, isUnpack=false)
         this.l = l
         this.leftBracket = leftBracket
         this.expressions = expressions
@@ -482,7 +482,7 @@ class CallExpr is Expr
 end
 
 class ArrayAccessExpr is Expr
-    fun new(l, leftBracket, expression, rightBracket)
+    construct(l, leftBracket, expression, rightBracket)
         this.l = l
         this.leftBracket = leftBracket
         this.expression = expression
@@ -499,7 +499,7 @@ class ArrayAccessExpr is Expr
 end
 
 class NumLit is Expr
-    fun new(num)
+    construct(num)
         this.num = num
     end
 
@@ -513,7 +513,7 @@ class NumLit is Expr
 end
 
 class StringLit is Expr
-    fun new(str)
+    construct(str)
         this.str = str
     end
 
@@ -527,7 +527,7 @@ class StringLit is Expr
 end
 
 class BoolLit is Expr
-    fun new(bool)
+    construct(bool)
         this.bool = bool
     end
 
@@ -541,7 +541,7 @@ class BoolLit is Expr
 end
 
 class NullLit is Expr
-    fun new(nil)
+    construct(nil)
         this.nil = nil
     end
 
@@ -555,7 +555,7 @@ class NullLit is Expr
 end
 
 class VarLit is Expr
-    fun new(id)
+    construct(id)
         this.id = id
     end
 
@@ -569,7 +569,7 @@ class VarLit is Expr
 end
 
 class SuperLit is Expr
-    fun new(superTok, name, leftBracket, arguments, rightBracket, isUnpack = false)
+    construct(superTok, name, leftBracket, arguments, rightBracket, isUnpack = false)
         this.superTok = superTok
         this.name = name
         this.leftBracket = leftBracket
@@ -588,7 +588,7 @@ class SuperLit is Expr
 end
 
 class ListLit is Expr
-    fun new(leftBracket, expressions, rightBracket)
+    construct(leftBracket, expressions, rightBracket)
         this.leftBracket = leftBracket
         this.expressions = expressions
         this.rightBracket = rightBracket
@@ -604,7 +604,7 @@ class ListLit is Expr
 end
 
 class TupleLit is Expr
-    fun new(expressions, leftBracket=null, rightBracket=null)
+    construct(expressions, leftBracket=null, rightBracket=null)
         this.expressions = expressions
         this.leftBracket, this.rightBracket = leftBracket, rightBracket
     end
@@ -619,13 +619,13 @@ class TupleLit is Expr
 end
 
 class TableEntry
-    fun new(key, val)
+    construct(key, val)
         this.key, this.val = key, val
     end
 end
 
 class TableLit is Expr
-    fun new(leftBracket, entries, rightBracket)
+    construct(leftBracket, entries, rightBracket)
         this.leftBracket = leftBracket
         this.entries = entries
         this.rightBracket = rightBracket

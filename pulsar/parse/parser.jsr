@@ -152,7 +152,7 @@ end
 // Recursive descent parser for the J* language
 // Basically mimics the C parser
 class Parser
-    fun new(sourceFile, errorCallback)
+    construct(sourceFile, errorCallback)
         typeAssert(sourceFile, SourceFile, "sourceFile")
         typeAssert(errorCallback, Function, "errorCallback")
         this._lex = Lexer(sourceFile)

@@ -34,9 +34,9 @@ fun isConstant(token)
     for var i = 0; i < #lexeme; i += 1
         var lexChar = lexeme.charAt(i)
         if !capsEncountered
-            capsEncountered = lexChar >= char("A") and lexChar <= char("Z")
+            capsEncountered = lexChar >= std.char("A") and lexChar <= std.char("Z")
         end
-        if lexChar >= char("a") and lexChar <= char("z")
+        if lexChar >= std.char("a") and lexChar <= std.char("z")
             return false
         end
     end

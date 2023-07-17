@@ -4,7 +4,7 @@ import re
 // Returns a list containing the offsets of all newlines present in the string
 static fun getLines(string)
     // Capture all newlines offsets with `()` syntax
-    var lines = re.gmatch(string, "()\n")
+    var lines = re.matchAll(string, "()\n")
     // Add syntethic newlines before the start and at the end
     lines.insert(0, -1)
     lines.insert(#lines, #string)
@@ -13,7 +13,7 @@ end
 
 // Class that represent a single J* source file
 class SourceFile
-    fun new(path, src)
+    construct(path, src)
         this.path = path
         this._src = src
         this._lines = getLines(src)
@@ -24,7 +24,7 @@ class SourceFile
     fun lineAt(off)
         var lo, hi = 0, #this._lines - 1
         while lo < hi - 1
-            var m = lo + int((hi - lo) / 2)
+            var m = lo + std.int((hi - lo) / 2)
             if off > this._lines[m]
                 lo = m
             else

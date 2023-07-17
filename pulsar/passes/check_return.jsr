@@ -3,7 +3,7 @@ import pulsar.passes.pass_visitor for PassVisitor
 
 // Stores information about an encountered function
 static class FuncItem
-    fun new(node)
+    construct(node)
         this._node = node
         this._returns = false
     end
@@ -18,7 +18,7 @@ static class FuncItem
 end
 
 class ReturnChecker is PassVisitor
-    fun new(reporter)
+    construct(reporter)
         super(reporter)
         this._functions = []
     end

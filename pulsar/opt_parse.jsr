@@ -81,7 +81,7 @@ static fun popn(stack, num)
 end
 
 class OptParser
-    fun new(usage, description, options)
+    construct(usage, description, options)
         this._options = options
         this._optMap = buildMapFromOptions(options)
         this._helpMsg = buildHelpMessage(usage, description, options)
@@ -156,7 +156,7 @@ class OptParser
 end
 
 class Option
-    fun new(long, short, description, args=0, argNames=null, default=null, required=false)
+    construct(long, short, description, args=0, argNames=null, default=null, required=false)
         assert(#long > 1, "Long option must have length greater than one", InvalidArgException)
         assert(#short == 1, "Short option must have length equal to one", InvalidArgException)
         assert(args == 0 or args == #argNames, "Not enough argument names given", InvalidArgException)

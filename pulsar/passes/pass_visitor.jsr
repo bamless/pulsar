@@ -2,7 +2,7 @@ import pulsar.errors.reporter for Severity
 import pulsar.parse.visitor for Visitor
 
 class PassVisitor is Visitor
-    fun new(reporter)
+    construct(reporter)
         this._reporter = reporter
     end
 

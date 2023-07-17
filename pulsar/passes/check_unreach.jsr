@@ -1,7 +1,7 @@
 import pulsar.passes.pass_visitor for PassVisitor
 
 class UnreachableCodeChecker is PassVisitor
-    fun new(reporter)
+    construct(reporter)
         super(reporter)
         this._loopDepth = 0
     end

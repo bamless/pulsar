@@ -28,7 +28,7 @@ end
 
 // Stores information about a declared variable
 static class Variable
-    fun new(name, line, scope)
+    construct(name, line, scope)
         this.name = name
         this.line = line
         this.scope = scope
@@ -48,7 +48,7 @@ end
 // It also detects and reports some common errors, such as use before declaration of
 // static globals, possibly uninitialized variables and unused variables
 class VariableResolver is PassVisitor
-    fun new(reporter, ignoreGlobalRedef=false)
+    construct(reporter, ignoreGlobalRedef=false)
         super(reporter)
         this._scopes = SymbolTable()       // Symboltable String (variable name) -> Variable
         this._initialized = SymbolTable()  // Symboltalbe Variable -> Boolean (init status)

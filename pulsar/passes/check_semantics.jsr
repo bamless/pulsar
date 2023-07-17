@@ -20,7 +20,7 @@ end
 //   - return statements outside of a function or in a constructor
 //   - illegal unpacking declarations/assignments (either unbalanced, or using an invalid type)
 class SemanticChecker is PassVisitor
-    fun new(reporter)
+    construct(reporter)
         super(reporter)
         this._scopeDepth = 0
         this._classDepth = 0

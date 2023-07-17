@@ -13,7 +13,7 @@ class Pulsar
     // Construct a new Pulsar object configured with `opts`.
     // `opts` is a set of strings that determines which passes will be run.
     // Valid values for opts are the same as the cli options, and have the same effects.
-    fun new(opts)
+    construct(opts)
         this._opts = opts
     end
 

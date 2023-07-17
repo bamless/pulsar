@@ -12,7 +12,7 @@ static fun isInstanceAttribute(expr)
 end
 
 class AccessChecker is PassVisitor
-    fun new(reporter)
+    construct(reporter)
         super(reporter)
         this._classDepth = 0
         this._functions = []

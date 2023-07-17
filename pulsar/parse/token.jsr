@@ -88,7 +88,7 @@ var Type = Enum(
 
 // A J* lexical token
 class Token
-    fun new(source, type, start, length)
+    construct(source, type, start, length)
         this.type = type
         this._source = source
         this._start = start

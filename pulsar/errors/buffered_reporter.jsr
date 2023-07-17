@@ -6,7 +6,7 @@ import pulsar.errors.reporter for IReporter, Severity
 //  - `formatter`: an object that provides a method format(pulsar.errors.Severity, String, parse.token.Token) -> String
 //  - `writer`: an object that provides a method write(string) -> void
 class BufferedReporter is IReporter
-    fun new(formatter, writer)
+    construct(formatter, writer)
         this._formatter = formatter
         this._writer = writer
         this._errors = []

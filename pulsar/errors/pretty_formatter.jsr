@@ -23,7 +23,7 @@ class PrettyFormatter
         errorBuilder.add("\n")
 
         for var i = 0; i < colStart; i += 1
-            errorBuilder.add("\t" if line.charAt(i) == char("\t") else " ")
+            errorBuilder.add("\t" if line.charAt(i) == std.char("\t") else " ")
         end
         
         errorBuilder.add("^")
